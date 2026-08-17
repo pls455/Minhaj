@@ -1456,3 +1456,123 @@ footer {
 }
 
 }
+.site-footer {
+    margin-top: 80px;
+    padding: 45px 24px 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(8,11,22,0.98),
+            rgba(17,24,39,0.96),
+            rgba(25,20,55,0.95)
+        );
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+}
+
+.footer-brand,
+.footer-contact,
+.footer-project {
+    padding: 24px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.035);
+    backdrop-filter: blur(12px);
+}
+
+.footer-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.footer-brand img {
+    width: 55px;
+    height: 55px;
+    object-fit: contain;
+}
+
+.footer-brand strong {
+    display: block;
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.footer-brand p,
+.footer-contact p,
+.footer-project p {
+    margin: 0;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.8;
+}
+
+.footer-contact h3,
+.footer-project h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.whatsapp-link,
+.project-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 18px;
+    padding: 11px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #7c3aed
+    );
+    transition: 0.25s ease;
+}
+
+.whatsapp-link:hover,
+.project-link:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+}
+
+.phone-number {
+    display: block;
+    margin-top: 10px;
+    direction: ltr;
+    text-align: right;
+    color: rgba(255,255,255,0.55);
+    font-size: 14px;
+}
+
+.footer-bottom {
+    max-width: 1200px;
+    margin: 35px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    color: rgba(255,255,255,0.45);
+    font-size: 14px;
+}
+
+@media (max-width: 800px) {
+
+    .footer-content {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+    }
+
+}
