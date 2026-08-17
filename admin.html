@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="theme-color" content="#080b16">
+
+<link rel="icon" href="assets/logo.svg">
+<link rel="stylesheet" href="css/style.css">
+
+<title>لوحة الإدارة | مِنهَاج</title>
+</head>
+
+<body>
+
+<div class="background-grid"></div>
+
+<header class="navbar">
+
+<a href="index.html" class="logo">
+<img src="assets/logo.svg" alt="Minhaj">
+
+<div>
+<strong>مِنهَاج</strong>
+<small>ADMIN</small>
+</div>
+</a>
+
+<nav>
+<a href="index.html">الموقع</a>
+<a href="subjects.html">المواد</a>
+<a href="resources.html">المصادر</a>
+<a class="active" href="admin.html">الإدارة</a>
+</nav>
+
+<button class="menu-btn">☰</button>
+
+</header>
+
+
+<main class="page">
+
+<div class="page-header">
+
+<span>لوحة التحكم</span>
+
+<h1>إدارة مِنهَاج</h1>
+
+<p>
+أضف وعدّل واحذف المواد والمصادر مباشرة من هنا.
+</p>
+
+</div>
+
+
+<!-- تسجيل الدخول -->
+
+<section id="loginSection" class="admin-login">
+
+<div class="login-card">
+
+<h2>تسجيل دخول الأدمن</h2>
+
+<p class="admin-note">
+هذه المنطقة مخصصة لإدارة محتوى المنصة.
+</p>
+
+<input
+id="email"
+type="email"
+placeholder="البريد الإلكتروني"
+autocomplete="email"
+>
+
+<input
+id="password"
+type="password"
+placeholder="كلمة المرور"
+autocomplete="current-password"
+>
+
+<button
+id="loginBtn"
+class="btn primary"
+>
+دخول
+</button>
+
+<div id="loginMsg"></div>
+
+</div>
+
+</section>
+
+
+<!-- لوحة التحكم -->
+
+<section id="dashboard" class="dashboard hidden">
+
+<div class="admin-top">
+
+<div>
+
+<span>مرحبًا بك</span>
+
+<h2 id="adminEmail">
+الأدمن
+</h2>
+
+</div>
+
+<button
+id="logoutBtn"
+class="btn secondary"
+>
+تسجيل الخروج
+</button>
+
+</div>
+
+
+<!-- الإحصائيات -->
+
+<div class="admin-stats">
+
+<div class="stat-box">
+
+<span>المواد</span>
+
+<strong id="subjectsCount">
+0
+</strong>
+
+</div>
+
+<div class="stat-box">
+
+<span>المصادر</span>
+
+<strong id="resourcesCount">
+0
+</strong>
+
+</div>
+
+</div>
+
+
+<!-- التبويبات -->
+
+<div class="admin-tabs">
+
+<button
+class="admin-tab active"
+data-tab="subjects"
+>
+📚 المواد
+</button>
+
+<button
+class="admin-tab"
+data-tab="resources"
+>
+📖 المصادر
+</button>
+
+</div>
+
+
+<!-- =========================
+     المواد
+========================= -->
+
+<div
+id="subjectsPanel"
+class="admin-panel"
+>
+
+<div class="panel-header">
+
+<div>
+
+<h2>المواد الدراسية</h2>
+
+<p>
+إضافة وإدارة مواد التوجيهي.
+</p>
+
+</div>
+
+<button
+id="addSubjectBtn"
+class="btn primary"
+>
++ إضافة مادة
+</button>
+
+</div>
+
+
+<div
+id="subjectForm"
+class="admin-form hidden"
+>
+
+<h3 id="subjectFormTitle">
+إضافة مادة
+</h3>
+
+<input
+id="subjectName"
+type="text"
+placeholder="اسم المادة"
+/>
+
+<select id="subjectBranch">
+
+<option value="">
+اختر الفرع
+</option>
+
+<option value="scientific">
+العلمي
+</option>
+
+<option value="literary">
+الأدبي
+</option>
+
+<option value="industrial">
+الصناعي
+</option>
+
+</select>
+
+<textarea
+id="subjectDescription"
+placeholder="وصف المادة"
+></textarea>
+
+<div class="form-actions">
+
+<button
+id="saveSubjectBtn"
+class="btn primary"
+>
+حفظ
+</button>
+
+<button
+id="cancelSubjectBtn"
+class="btn secondary"
+>
+إلغاء
+</button>
+
+</div>
+
+<div id="subjectMsg"></div>
+
+</div>
+
+
+<div
+id="subjectsList"
+class="admin-list"
+>
+
+<div class="loading">
+جاري تحميل المواد...
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     المصادر
+========================= -->
+
+<div
+id="resourcesPanel"
+class="admin-panel hidden"
+>
+
+<div class="panel-header">
+
+<div>
+
+<h2>المحتوى التعليمي</h2>
+
+<p>
+أضف نصوصًا وروابط ومحتوى نصي مع روابط.
+</p>
+
+</div>
+
+<button
+id="addResourceBtn"
+class="btn primary"
+>
++ إضافة محتوى
+</button>
+
+</div>
+
+
+<div
+id="resourceForm"
+class="admin-form hidden"
+>
+
+<h3 id="resourceFormTitle">
+إضافة محتوى
+</h3>
+
+
+<!-- العنوان -->
+
+<label>
+عنوان المحتوى
+</label>
+
+<input
+id="resourceTitle"
+type="text"
+placeholder="مثال: قوانين الوحدة الأولى"
+/>
+
+
+<!-- الفرع -->
+
+<label>
+الفرع
+</label>
+
+<select id="resourceBranch">
+
+<option value="">
+اختر الفرع
+</option>
+
+<option value="scientific">
+العلمي
+</option>
+
+<option value="literary">
+الأدبي
+</option>
+
+<option value="industrial">
+الصناعي
+</option>
+
+</select>
+
+
+<!-- المادة -->
+
+<label>
+المادة
+</label>
+
+<select id="resourceSubject">
+
+<option value="">
+اختر المادة
+</option>
+
+</select>
+
+
+<!-- التصنيف -->
+
+<label>
+التصنيف
+</label>
+
+<select id="resourceCategory">
+
+<option value="">
+اختر التصنيف
+</option>
+
+</select>
+
+
+<!-- نوع المحتوى -->
+
+<label>
+نوع المحتوى
+</label>
+
+<select id="resourceType">
+
+<option value="">
+اختر نوع المحتوى
+</option>
+
+<option value="text">
+📝 نص فقط
+</option>
+
+<option value="link">
+🔗 رابط فقط
+</option>
+
+<option value="text_link">
+📝🔗 نص + رابط
+</option>
+
+</select>
+
+
+<!-- النص -->
+
+<div
+id="resourceTextGroup"
+class="resource-field hidden"
+>
+
+<label>
+المحتوى النصي
+</label>
+
+<textarea
+id="resourceText"
+rows="8"
+placeholder="اكتب المحتوى هنا..."
+></textarea>
+
+</div>
+
+
+<!-- الرابط -->
+
+<div
+id="resourceUrlGroup"
+class="resource-field hidden"
+>
+
+<label>
+الرابط
+</label>
+
+<input
+id="resourceUrl"
+type="url"
+placeholder="https://example.com/"
+>
+
+</div>
+
+
+<!-- الوصف -->
+
+<label>
+وصف مختصر
+</label>
+
+<textarea
+id="resourceDescription"
+rows="4"
+placeholder="وصف مختصر للمحتوى - اختياري"
+></textarea>
+
+
+<div class="form-actions">
+
+<button
+id="saveResourceBtn"
+class="btn primary"
+>
+حفظ المحتوى
+</button>
+
+<button
+id="cancelResourceBtn"
+class="btn secondary"
+>
+إلغاء
+</button>
+
+</div>
+
+
+<div id="resourceMsg"></div>
+
+</div>
+
+
+<!-- قائمة المحتوى -->
+
+<div
+id="resourcesList"
+class="admin-list"
+>
+
+<div class="loading">
+جاري تحميل المحتوى...
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<footer>
+
+<span>
+© 2026 مِنهَاج | Minhaj
+</span>
+
+<span>
+تحت إشراف أبو إبراهيم
+</span>
+
+</footer>
+
+
+<script type="module" src="js/admin.js"></script>
+
+</body>
+</html>
