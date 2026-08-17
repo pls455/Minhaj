@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="theme-color" content="#080b16">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/logo.svg">
+
+<link rel="stylesheet" href="css/style.css">
+
+<title>المواد | مِنهَاج</title>
+
+</head>
+
+<body>
+
+<div class="background-grid"></div>
+
+<header class="navbar">
+
+<a href="index.html" class="logo">
+
+<img src="assets/logo.svg">
+
+<div>
+<strong>مِنهَاج</strong>
+<small>MINHAJ</small>
+</div>
+
+</a>
+
+<nav>
+
+<a href="index.html">الرئيسية</a>
+<a class="active" href="subjects.html">المواد</a>
+<a href="resources.html">المصادر</a>
+<a href="about.html">حول</a>
+
+</nav>
+
+<button class="menu-btn">☰</button>
+
+</header>
+
+
+<main class="page">
+
+<div class="page-header">
+
+<span>المواد الدراسية</span>
+
+<h1>
+اختر فرعك
+</h1>
+
+<p>
+المواد يتم تحميلها مباشرة من Firebase.
+</p>
+
+</div>
+
+
+<div class="filters">
+
+<button class="filter active" data-branch="">
+الكل
+</button>
+
+<button class="filter" data-branch="scientific">
+علمي
+</button>
+
+<button class="filter" data-branch="literary">
+أدبي
+</button>
+
+<button class="filter" data-branch="industrial">
+صناعي
+</button>
+
+</div>
+
+
+<div id="subjectsGrid" class="cards">
+
+<div class="loading">
+جاري تحميل المواد...
+</div>
+
+</div>
+
+</main>
+
+
+<footer>
+
+<span>
+© 2026 مِنهَاج | Minhaj
+</span>
+
+<span>
+تحت إشراف أبو إبراهيم
+</span>
+
+</footer>
+
+<script type="module" src="js/app.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<meta name="theme-color" content="#080b16">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/logo.svg">
+
+<link rel="stylesheet" href="css/style.css">
+
+<title>المصادر | مِنهَاج</title>
+
+</head>
+
+<body>
+
+<div class="background-grid"></div>
+
+<header class="navbar">
+
+<a href="index.html" class="logo">
+
+<img src="assets/logo.svg">
+
+<div>
+<strong>مِنهَاج</strong>
+<small>MINHAJ</small>
+</div>
+
+</a>
+
+<nav>
+
+<a href="index.html">الرئيسية</a>
+<a href="subjects.html">المواد</a>
+<a class="active" href="resources.html">المصادر</a>
+<a href="about.html">حول</a>
+
+</nav>
+
+<button class="menu-btn">
+☰
+</button>
+
+</header>
+
+
+<main class="page">
+
+<div class="page-header">
+
+<span>المكتبة التعليمية</span>
+
+<h1>
+المصادر
+</h1>
+
+<p>
+كتب ومصادر تعليمية مرتبة حسب الفرع والمادة.
+</p>
+
+</div>
+
+
+<div class="resource-tools">
+
+<input
+id="searchInput"
+type="search"
+placeholder="ابحث عن مصدر..."
+>
+
+<select id="branchSelect">
+
+<option value="">
+كل الفروع
+</option>
+
+<option value="scientific">
+علمي
+</option>
+
+<option value="literary">
+أدبي
+</option>
+
+<option value="industrial">
+صناعي
+</option>
+
+</select>
+
+</div>
+
+
+<div id="resourcesGrid" class="cards">
+
+<div class="loading">
+جاري تحميل المصادر...
+</div>
+
+</div>
+
+</main>
+
+
+<footer>
+
+<span>
+© 2026 مِنهَاج | Minhaj
+</span>
+
+<span>
+تحت إشراف أبو إبراهيم
+</span>
+
+</footer>
+
+
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>
