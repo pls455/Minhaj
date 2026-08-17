@@ -1,0 +1,3 @@
+{
+  "name":"مِنهَاج | Minhaj","short_name":"مِنهَاج","description":"منصة مصادر التوجيهي والتأسيس","start_url":"./index.html","scope":"./","display":"standalone","background_color":"#050914","theme_color":"#080b16","direction":"rtl","lang":"ar","icons":[{"src":"assets/logo.svg","sizes":"any","type":"image/svg+xml"}]
+}
