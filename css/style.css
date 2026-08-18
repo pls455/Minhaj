@@ -2052,3 +2052,28 @@ body{background:#050914 url('../assets/background.svg') center/cover fixed no-re
   }
 
 }
+.load-more-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.load-more-btn {
+  border: 0;
+  padding: 12px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.load-more-btn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.no-more {
+  opacity: .6;
+  font-size: 14px;
+}
