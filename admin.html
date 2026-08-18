@@ -1,0 +1,4268 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <meta name="theme-color" content="#080b16">
+
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="stylesheet" href="css/style.css">
+
+  <title>لوحة الإدارة | مِنهَاج</title>
+</head>
+
+<body>
+
+<div class="background-grid"></div>
+
+<header class="navbar">
+
+  <a href="index.html" class="logo">
+    <img src="assets/logo.svg" alt="Minhaj">
+
+    <div>
+      <strong>مِنهَاج</strong>
+      <small>ADMIN</small>
+    </div>
+  </a>
+
+  <nav>
+    <a href="index.html">الموقع</a>
+    <a href="subjects.html">المواد</a>
+    <a href="resources.html">المصادر</a>
+    <a href="foundation.html">التأسيس</a>
+    <a class="active" href="admin.html">الإدارة</a>
+  </nav>
+
+  <button class="menu-btn">☰</button>
+
+</header>
+
+
+<main class="page">
+
+  <!-- LOGIN -->
+
+  <section id="loginSection" class="admin-login">
+
+    <div class="login-card">
+
+      <h2>تسجيل دخول الأدمن</h2>
+
+      <p class="admin-note">
+        الصلاحيات الفعلية محمية بقواعد Firestore.
+      </p>
+
+      <input
+        id="email"
+        type="email"
+        placeholder="البريد الإلكتروني"
+      >
+
+      <input
+        id="password"
+        type="password"
+        placeholder="كلمة المرور"
+      >
+
+      <button
+        id="loginBtn"
+        class="btn primary">
+        دخول
+      </button>
+
+      <div id="loginMsg"></div>
+
+    </div>
+
+  </section>
+
+
+  <!-- DASHBOARD -->
+
+  <section
+    id="dashboard"
+    class="dashboard hidden">
+
+    <!-- TOP -->
+
+    <div class="admin-top">
+
+      <div>
+
+        <span>لوحة الإدارة</span>
+
+        <h2 id="adminEmail">
+          الأدمن
+        </h2>
+
+        <small
+          id="roleBadge"
+          class="tag">
+        </small>
+
+      </div>
+
+      <button
+        id="logoutBtn"
+        class="btn secondary">
+        تسجيل الخروج
+      </button>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="admin-stats">
+
+      <div class="stat-box">
+        <span>المواد</span>
+        <strong id="subjectsCount">0</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>المصادر</span>
+        <strong id="resourcesCount">0</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>التأسيس</span>
+        <strong id="foundationsCount">0</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>الفروع</span>
+        <strong id="branchesCount">0</strong>
+      </div>
+
+      <div class="stat-box">
+        <span>اقتراحات معلقة</span>
+        <strong id="suggestionsCount">0</strong>
+      </div>
+
+    </div>
+
+
+    <!-- TABS -->
+
+    <div class="admin-tabs">
+
+      <button
+        class="admin-tab active"
+        data-tab="overview">
+        📊 الرئيسية
+      </button>
+
+      <button
+        class="admin-tab"
+        data-tab="subjects">
+        📚 المواد
+      </button>
+
+      <button
+        class="admin-tab"
+        data-tab="resources">
+        📖 المصادر
+      </button>
+
+      <button
+        class="admin-tab"
+        data-tab="foundations">
+        🧠 التأسيس
+      </button>
+
+      <button
+        class="admin-tab"
+        data-tab="suggestions">
+        📩 الاقتراحات
+      </button>
+
+      <button
+        class="admin-tab"
+        data-tab="bulk">
+        📦 استيراد جماعي
+      </button>
+
+      <!-- SUPER ADMIN ONLY -->
+
+      <button
+        class="admin-tab super-only"
+        data-tab="branches">
+        🌳 الفروع
+      </button>
+
+      <button
+        class="admin-tab super-only"
+        data-tab="admins">
+        👥 الصلاحيات
+      </button>
+
+    </div>
+
+
+    <!-- OVERVIEW -->
+
+    <div
+      id="overviewPanel"
+      class="admin-panel">
+
+      <div class="panel-header">
+
+        <div>
+          <h2>نظرة عامة</h2>
+
+          <p>
+            كل محتوى الموقع من مكان واحد.
+          </p>
+        </div>
+
+        <a
+          class="btn secondary"
+          href="suggest.html">
+          صفحة اقتراح المحتوى
+        </a>
+
+      </div>
+
+      <div
+        id="recentSuggestions"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- SUBJECTS -->
+
+    <div
+      id="subjectsPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+          <h2>المواد</h2>
+
+          <p>
+            المادة يمكن ربطها بفرع واحد أو أكثر.
+          </p>
+        </div>
+
+        <button
+          id="addSubjectBtn"
+          class="btn primary">
+          + إضافة مادة
+        </button>
+
+      </div>
+
+
+      <form
+        id="subjectForm"
+        class="admin-form hidden">
+
+        <input
+          id="subjectName"
+          required
+          placeholder="اسم المادة">
+
+        <div
+          id="subjectBranches"
+          class="check-row">
+        </div>
+
+        <input
+          id="subjectOrder"
+          type="number"
+          placeholder="الترتيب">
+
+        <textarea
+          id="subjectDescription"
+          placeholder="وصف المادة">
+        </textarea>
+
+        <button
+          class="btn primary">
+          حفظ المادة
+        </button>
+
+        <button
+          type="button"
+          id="cancelSubject"
+          class="btn secondary">
+          إلغاء
+        </button>
+
+        <div id="subjectMsg"></div>
+
+      </form>
+
+
+      <div
+        id="subjectsList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- RESOURCES -->
+
+    <div
+      id="resourcesPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+          <h2>المصادر</h2>
+
+          <p>
+            روابط فقط. لا يوجد رفع PDF من الموقع.
+          </p>
+        </div>
+
+        <button
+          id="addResourceBtn"
+          class="btn primary">
+          + إضافة مصدر
+        </button>
+
+      </div>
+
+
+      <form
+        id="resourceForm"
+        class="admin-form hidden">
+
+        <input
+          id="resourceTitle"
+          required
+          placeholder="عنوان المصدر">
+
+        <input
+          id="resourceUrl"
+          type="url"
+          required
+          placeholder="https://...">
+
+        <select
+          id="resourceBranch"
+          required>
+          <option value="">
+            اختر الفرع
+          </option>
+        </select>
+
+        <select
+          id="resourceSubject"
+          required>
+          <option value="">
+            اختر المادة
+          </option>
+        </select>
+
+        <input
+          id="resourceType"
+          placeholder="النوع: كتاب، ملزمة، أسئلة...">
+
+        <input
+          id="resourceCategory"
+          placeholder="التصنيف">
+
+        <input
+          id="resourceKeywords"
+          placeholder="الكلمات المفتاحية مفصولة بفواصل">
+
+        <input
+          id="resourceOrder"
+          type="number"
+          placeholder="الترتيب">
+
+        <textarea
+          id="resourceDescription"
+          placeholder="الوصف">
+        </textarea>
+
+        <button
+          class="btn primary">
+          حفظ المصدر
+        </button>
+
+        <button
+          type="button"
+          id="cancelResource"
+          class="btn secondary">
+          إلغاء
+        </button>
+
+        <div id="resourceMsg"></div>
+
+      </form>
+
+
+      <div
+        id="resourcesList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- FOUNDATIONS -->
+
+    <div
+      id="foundationsPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+
+          <h2>التأسيس</h2>
+
+          <p>
+            تأسيس مربوط بالفرع والمادة والمستوى.
+          </p>
+
+        </div>
+
+        <button
+          id="addFoundationBtn"
+          class="btn primary">
+          + إضافة تأسيس
+        </button>
+
+      </div>
+
+
+      <form
+        id="foundationForm"
+        class="admin-form hidden">
+
+        <input
+          id="foundationTitle"
+          required
+          placeholder="عنوان التأسيس">
+
+        <input
+          id="foundationUrl"
+          type="url"
+          required
+          placeholder="رابط التأسيس">
+
+        <select
+          id="foundationBranch"
+          required>
+          <option value="">
+            اختر الفرع
+          </option>
+        </select>
+
+        <select
+          id="foundationSubject"
+          required>
+          <option value="">
+            اختر المادة
+          </option>
+        </select>
+
+        <select id="foundationLevel">
+
+          <option value="beginner">
+            مبتدئ
+          </option>
+
+          <option value="intermediate">
+            متوسط
+          </option>
+
+          <option value="advanced">
+            متقدم
+          </option>
+
+        </select>
+
+        <select id="foundationType">
+
+          <option value="lesson">
+            شرح
+          </option>
+
+          <option value="video">
+            فيديو
+          </option>
+
+          <option value="summary">
+            ملخص
+          </option>
+
+          <option value="exercise">
+            تمارين
+          </option>
+
+        </select>
+
+        <input
+          id="foundationKeywords"
+          placeholder="كلمات مفتاحية مفصولة بفواصل">
+
+        <input
+          id="foundationOrder"
+          type="number"
+          placeholder="الترتيب">
+
+        <textarea
+          id="foundationDescription"
+          placeholder="الوصف">
+        </textarea>
+
+        <button
+          class="btn primary">
+          حفظ التأسيس
+        </button>
+
+        <button
+          type="button"
+          id="cancelFoundation"
+          class="btn secondary">
+          إلغاء
+        </button>
+
+        <div id="foundationMsg"></div>
+
+      </form>
+
+
+      <div
+        id="foundationsList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- SUGGESTIONS -->
+
+    <div
+      id="suggestionsPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+
+          <h2>اقتراحات الطلاب</h2>
+
+          <p>
+            لا يظهر أي اقتراح للطلاب قبل الموافقة.
+          </p>
+
+        </div>
+
+      </div>
+
+      <div
+        id="suggestionsList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- BULK -->
+
+    <div
+      id="bulkPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+
+          <h2>الاستيراد الجماعي</h2>
+
+          <p>
+            للأدمن المسموح له بإدارة المحتوى.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="bulk-box">
+
+        <h3>
+          استيراد المصادر
+        </h3>
+
+        <textarea
+          id="bulkResources"
+          rows="10"
+          placeholder='[{"title":"...","url":"https://...","branchId":"...","subjectId":"...","type":"كتاب","category":"...","keywords":["..."]}]'>
+        </textarea>
+
+        <button
+          id="importResources"
+          class="btn primary">
+          فحص واستيراد المصادر
+        </button>
+
+        <div
+          id="bulkResourceMsg">
+        </div>
+
+      </div>
+
+
+      <div class="bulk-box">
+
+        <h3>
+          استيراد التأسيس
+        </h3>
+
+        <textarea
+          id="bulkFoundations"
+          rows="10"
+          placeholder='[{"title":"...","url":"https://...","branchIds":["..."],"subjectId":"...","level":"beginner","type":"lesson"}]'>
+        </textarea>
+
+        <button
+          id="importFoundations"
+          class="btn primary">
+          فحص واستيراد التأسيس
+        </button>
+
+        <div
+          id="bulkFoundationMsg">
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- BRANCHES SUPER ADMIN -->
+
+    <div
+      id="branchesPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+
+          <h2>
+            إدارة الفروع
+          </h2>
+
+          <p>
+            هذه الصفحة متاحة للـ Super Admin فقط.
+          </p>
+
+        </div>
+
+        <button
+          id="addBranchBtn"
+          class="btn primary">
+          + إضافة فرع
+        </button>
+
+      </div>
+
+
+      <form
+        id="branchForm"
+        class="admin-form hidden">
+
+        <input
+          id="branchName"
+          required
+          placeholder="اسم الفرع، مثال: العلمي">
+
+        <input
+          id="branchId"
+          required
+          placeholder="معرف الفرع، مثال: scientific">
+
+        <input
+          id="branchOrder"
+          type="number"
+          placeholder="الترتيب">
+
+        <input
+          id="branchDescription"
+          placeholder="وصف الفرع">
+
+        <label>
+          <input
+            id="branchActive"
+            type="checkbox"
+            checked>
+          الفرع نشط
+        </label>
+
+        <button
+          class="btn primary">
+          حفظ الفرع
+        </button>
+
+        <button
+          type="button"
+          id="cancelBranch"
+          class="btn secondary">
+          إلغاء
+        </button>
+
+        <div id="branchMsg"></div>
+
+      </form>
+
+
+      <div
+        id="branchesList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+
+    <!-- ADMINS -->
+
+    <div
+      id="adminsPanel"
+      class="admin-panel hidden">
+
+      <div class="panel-header">
+
+        <div>
+
+          <h2>
+            صلاحيات الأدمن
+          </h2>
+
+          <p>
+            Super Admin فقط يستطيع تعديل الصلاحيات.
+          </p>
+
+        </div>
+
+        <button
+          id="addAdminBtn"
+          class="btn primary">
+          + إضافة أدمن
+        </button>
+
+      </div>
+
+
+      <form
+        id="adminForm"
+        class="admin-form hidden">
+
+        <input
+          id="adminUid"
+          required
+          placeholder="Firebase User UID">
+
+        <select id="adminRole">
+
+          <option value="content_admin">
+            Content Admin
+          </option>
+
+          <option value="reviewer">
+            Reviewer
+          </option>
+
+          <option value="superadmin">
+            Super Admin
+          </option>
+
+        </select>
+
+        <label>
+
+          <input
+            id="adminActive"
+            type="checkbox"
+            checked>
+
+          نشط
+
+        </label>
+
+        <button
+          class="btn primary">
+          حفظ
+        </button>
+
+        <button
+          type="button"
+          id="cancelAdmin"
+          class="btn secondary">
+          إلغاء
+        </button>
+
+        <div id="adminMsg"></div>
+
+      </form>
+
+
+      <div
+        id="adminsList"
+        class="admin-list">
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+
+<footer>
+
+  <span>
+    © 2026 مِنهَاج | Minhaj
+  </span>
+
+  <span>
+    لوحة الإدارة
+  </span>
+
+</footer>
+
+
+<script
+  type="module"
+  src="js/admin.js">
+</script>
+
+</body>
+</html>")) {
+
+    $("#suggestionsList").innerHTML =
+
+      suggestions
+
+        .map(
+          suggestion => `
+
+            <div class="admin-item suggestion">
+
+              <div>
+
+                <strong>
+                  ${esc(
+                    suggestion.title
+                  )}
+                </strong>
+
+                <p>
+
+                  ${
+                    suggestion.contentType ===
+                    "foundation"
+                      ? "🧠 تأسيس"
+                      : "📚 مصدر"
+                  }
+
+                  ·
+
+                  ${branchesHTML(
+                    suggestion.branchIds ||
+                    suggestion.branchId
+                  )}
+
+                  · الطالب:
+
+                  ${esc(
+                    suggestion.studentName ||
+                    "غير محدد"
+                  )}
+
+                </p>
+
+                ${
+                  suggestion.description
+                    ? `
+                      <p>
+                        ${esc(
+                          suggestion.description
+                        )}
+                      </p>
+                    `
+                    : ""
+                }
+
+                ${
+                  suggestion.url
+                    ? `
+                      <a
+                        href="${esc(
+                          suggestion.url
+                        )}"
+                        target="_blank"
+                        rel="noopener noreferrer">
+
+                        فتح الرابط
+
+                      </a>
+                    `
+                    : ""
+                }
+
+              </div>
+
+              <div>
+
+                <button
+                  class="btn primary small"
+                  data-approve="${esc(
+                    suggestion.id
+                  )}">
+
+                  ✅ موافقة
+
+                </button>
+
+                <button
+                  class="btn danger small"
+                  data-reject="${esc(
+                    suggestion.id
+                  )}">
+
+                  ❌ رفض
+
+                </button>
+
+              </div>
+
+            </div>
+
+          `
+        )
+
+        .join("") ||
+
+      '<div class="empty">لا توجد اقتراحات معلقة.</div>';
+
+  }
+
+
+  /* =======================================================
+     RECENT SUGGESTIONS
+  ======================================================= */
+
+  if ($("#recentSuggestions")) {
+
+    $("#recentSuggestions").innerHTML =
+
+      suggestions
+        .slice(0, 5)
+
+        .map(
+          suggestion => `
+
+            <div class="admin-item">
+
+              <div>
+
+                <strong>
+                  ${esc(
+                    suggestion.title
+                  )}
+                </strong>
+
+                <p>
+                  قيد المراجعة ·
+                  ${esc(
+                    suggestion.studentName ||
+                    "طالب"
+                  )}
+                </p>
+
+              </div>
+
+              <button
+                class="btn small"
+                data-tabjump="suggestions">
+
+                مراجعة
+
+              </button>
+
+            </div>
+
+          `
+        )
+
+        .join("") ||
+
+      '<div class="empty">لا توجد اقتراحات معلقة.</div>';
+
+  }
+
+
+  /* =======================================================
+     SUPER ADMIN TABS
+  ======================================================= */
+
+  $$(".super-only")
+    .forEach(element => {
+
+      element.classList.toggle(
+        "hidden",
+        role !== "superadmin"
+      );
+
+    });
+
+
+  /* =======================================================
+     ADMINS
+  ======================================================= */
+
+  if ($("#adminsList")) {
+
+    if (
+      role !== "superadmin"
+    ) {
+
+      $("#adminsList")
+        .innerHTML = "";
+
+    } else {
+
+      $("#adminsList").innerHTML =
+
+        admins
+          .map(
+            admin => `
+
+              <div class="admin-item">
+
+                <div>
+
+                  <strong>
+                    ${esc(
+                      admin.email ||
+                      admin.id
+                    )}
+                  </strong>
+
+                  <p>
+
+                    ${esc(
+                      admin.role ||
+                      "reviewer"
+                    )}
+
+                    ·
+
+                    ${
+                      admin.active
+                        ? "نشط"
+                        : "موقوف"
+                    }
+
+                    · UID:
+
+                    ${esc(admin.id)}
+
+                  </p>
+
+                </div>
+
+                ${
+                  admin.active
+                    ? `
+                      <button
+                        class="btn danger small"
+                        data-del-admin="${esc(
+                          admin.id
+                        )}">
+
+                        تعطيل
+
+                      </button>
+                    `
+                    : `
+                      <button
+                        class="btn small"
+                        data-enable-admin="${esc(
+                          admin.id
+                        )}">
+
+                        تفعيل
+
+                      </button>
+                    `
+                }
+
+              </div>
+
+            `
+          )
+
+          .join("") ||
+
+        '<div class="empty">لا يوجد أدمن.</div>';
+
+    }
+
+  }
+
+
+  /* =======================================================
+     BRANCHES
+  ======================================================= */
+
+  if ($("#branchesList")) {
+
+    if (
+      role !== "superadmin"
+    ) {
+
+      $("#branchesList")
+        .innerHTML = "";
+
+    } else {
+
+      const allBranches =
+        [...branches];
+
+      $("#branchesList").innerHTML =
+
+        allBranches
+
+          .sort(
+            (a, b) =>
+              (a.order ?? 9999) -
+              (b.order ?? 9999)
+          )
+
+          .map(
+            branch => `
+
+              <div class="admin-item">
+
+                <div>
+
+                  <strong>
+                    🌳 ${esc(
+                      branch.name
+                    )}
+                  </strong>
+
+                  <p>
+
+                    ID:
+                    <code>
+                      ${esc(branch.id)}
+                    </code>
+
+                    ·
+
+                    ${
+                      branch.active !== false
+                        ? "نشط"
+                        : "موقوف"
+                    }
+
+                    · ترتيب:
+                    ${branch.order ?? "-"}
+
+                  </p>
+
+                  ${
+                    branch.description
+                      ? `
+                        <p>
+                          ${esc(
+                            branch.description
+                          )}
+                        </p>
+                      `
+                      : ""
+                  }
+
+                  ${documentIdHTML(
+                    branch.id
+                  )}
+
+                </div>
+
+
+                <div>
+
+                  <button
+                    class="btn small"
+                    data-edit-branch="${esc(
+                      branch.id
+                    )}">
+
+                    تعديل
+
+                  </button>
+
+
+                  ${
+                    branch.active !== false
+                      ? `
+                        <button
+                          class="btn danger small"
+                          data-disable-branch="${esc(
+                            branch.id
+                          )}">
+
+                          تعطيل
+
+                        </button>
+                      `
+                      : `
+                        <button
+                          class="btn small"
+                          data-enable-branch="${esc(
+                            branch.id
+                          )}">
+
+                          تفعيل
+
+                        </button>
+                      `
+                  }
+
+                </div>
+
+              </div>
+
+            `
+          )
+
+          .join("") ||
+
+        '<div class="empty">لا توجد فروع.</div>';
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+function openTab(name) {
+
+  $$(".admin-tab")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.tab === name
+      );
+
+    });
+
+
+  $$(".admin-panel")
+    .forEach(panel => {
+
+      panel.classList.add(
+        "hidden"
+      );
+
+    });
+
+
+  $("#" + name + "Panel")
+    ?.classList.remove(
+      "hidden"
+    );
+
+}
+
+
+/* =========================================================
+   TAB EVENTS
+========================================================= */
+
+$$(".admin-tab")
+  .forEach(button => {
+
+    button.onclick = () => {
+
+      if (
+        button.classList.contains(
+          "hidden"
+        )
+      ) {
+
+        return;
+      }
+
+      openTab(
+        button.dataset.tab
+      );
+
+    };
+
+  });
+
+
+/* =========================================================
+   COPY + ACTIONS
+========================================================= */
+
+document.addEventListener(
+  "click",
+  async event => {
+
+    const target =
+      event.target;
+
+
+    /* COPY */
+
+    if (
+      target.dataset.copyId
+    ) {
+
+      try {
+
+        await navigator.clipboard.writeText(
+          target.dataset.copyId
+        );
+
+        const old =
+          target.textContent;
+
+        target.textContent =
+          "✅ تم النسخ";
+
+        setTimeout(
+          () =>
+            target.textContent =
+              old,
+          1500
+        );
+
+      } catch {
+
+        alert(
+          "تعذر نسخ Document ID."
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* TAB JUMP */
+
+    if (
+      target.dataset.tabjump
+    ) {
+
+      openTab(
+        target.dataset.tabjump
+      );
+
+      return;
+    }
+
+
+    /* DELETE SUBJECT */
+
+    if (
+      target.dataset.delSub
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+
+      if (
+        !confirm(
+          "هل تريد حذف المادة؟"
+        )
+      ) return;
+
+
+      try {
+
+        await deleteDoc(
+          doc(
+            db,
+            "subjects",
+            target.dataset.delSub
+          )
+        );
+
+        await refresh();
+
+      } catch (error) {
+
+        alert(
+          "فشل حذف المادة:\n" +
+          errorMessage(error)
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* DELETE RESOURCE */
+
+    if (
+      target.dataset.delRes
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+
+      if (
+        !confirm(
+          "هل تريد حذف المصدر؟"
+        )
+      ) return;
+
+
+      try {
+
+        await deleteDoc(
+          doc(
+            db,
+            "resources",
+            target.dataset.delRes
+          )
+        );
+
+        await refresh();
+
+      } catch (error) {
+
+        alert(
+          "فشل حذف المصدر:\n" +
+          errorMessage(error)
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* DELETE FOUNDATION */
+
+    if (
+      target.dataset.delFound
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+
+      if (
+        !confirm(
+          "هل تريد حذف التأسيس؟"
+        )
+      ) return;
+
+
+      try {
+
+        await deleteDoc(
+          doc(
+            db,
+            "foundations",
+            target.dataset.delFound
+          )
+        );
+
+        await refresh();
+
+      } catch (error) {
+
+        alert(
+          "فشل حذف التأسيس:\n" +
+          errorMessage(error)
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* APPROVE */
+
+    if (
+      target.dataset.approve
+    ) {
+
+      if (
+        !can("reviewer")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+      await review(
+        target.dataset.approve,
+        true
+      );
+
+      return;
+    }
+
+
+    /* REJECT */
+
+    if (
+      target.dataset.reject
+    ) {
+
+      if (
+        !can("reviewer")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+      await review(
+        target.dataset.reject,
+        false
+      );
+
+      return;
+    }
+
+
+    /* EDIT SUBJECT */
+
+    if (
+      target.dataset.editSub
+    ) {
+
+      editSubject(
+        target.dataset.editSub
+      );
+
+      return;
+    }
+
+
+    /* EDIT RESOURCE */
+
+    if (
+      target.dataset.editRes
+    ) {
+
+      editResource(
+        target.dataset.editRes
+      );
+
+      return;
+    }
+
+
+    /* EDIT FOUNDATION */
+
+    if (
+      target.dataset.editFound
+    ) {
+
+      editFoundation(
+        target.dataset.editFound
+      );
+
+      return;
+    }
+
+
+    /* EDIT BRANCH */
+
+    if (
+      target.dataset.editBranch
+    ) {
+
+      editBranch(
+        target.dataset.editBranch
+      );
+
+      return;
+    }
+
+
+    /* DISABLE BRANCH */
+
+    if (
+      target.dataset.disableBranch
+    ) {
+
+      await setBranchActive(
+        target.dataset.disableBranch,
+        false
+      );
+
+      return;
+    }
+
+
+    /* ENABLE BRANCH */
+
+    if (
+      target.dataset.enableBranch
+    ) {
+
+      await setBranchActive(
+        target.dataset.enableBranch,
+        true
+      );
+
+      return;
+    }
+
+
+    /* DISABLE ADMIN */
+
+    if (
+      target.dataset.delAdmin
+    ) {
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        alert(
+          "هذه العملية لـ Super Admin فقط."
+        );
+
+        return;
+      }
+
+
+      if (
+        !confirm(
+          "هل تريد تعطيل هذا الأدمن؟"
+        )
+      ) return;
+
+
+      try {
+
+        await updateDoc(
+          doc(
+            db,
+            "admins",
+            target.dataset.delAdmin
+          ),
+          {
+            active: false,
+            updatedAt:
+              serverTimestamp()
+          }
+        );
+
+        await refresh();
+
+      } catch (error) {
+
+        alert(
+          "فشل تعطيل الأدمن:\n" +
+          errorMessage(error)
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* ENABLE ADMIN */
+
+    if (
+      target.dataset.enableAdmin
+    ) {
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        alert(
+          "هذه العملية لـ Super Admin فقط."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        await updateDoc(
+          doc(
+            db,
+            "admins",
+            target.dataset.enableAdmin
+          ),
+          {
+            active: true,
+            updatedAt:
+              serverTimestamp()
+          }
+        );
+
+        await refresh();
+
+      } catch (error) {
+
+        alert(
+          "فشل تفعيل الأدمن:\n" +
+          errorMessage(error)
+        );
+
+      }
+
+      return;
+    }
+
+
+    /* ADD SUBJECT */
+
+    if (
+      target.id ===
+      "addSubjectBtn"
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+      editing = null;
+
+      $("#subjectForm")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      renderSubjectBranchCheckboxes();
+
+      return;
+    }
+
+
+    /* CANCEL SUBJECT */
+
+    if (
+      target.id ===
+      "cancelSubject"
+    ) {
+
+      $("#subjectForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+      editing = null;
+
+      return;
+    }
+
+
+    /* ADD RESOURCE */
+
+    if (
+      target.id ===
+      "addResourceBtn"
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+      editing = null;
+
+      $("#resourceForm")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      return;
+    }
+
+
+    /* CANCEL RESOURCE */
+
+    if (
+      target.id ===
+      "cancelResource"
+    ) {
+
+      $("#resourceForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+      editing = null;
+
+      return;
+    }
+
+
+    /* ADD FOUNDATION */
+
+    if (
+      target.id ===
+      "addFoundationBtn"
+    ) {
+
+      if (
+        !can("content_admin")
+      ) {
+
+        alert(
+          "ليس لديك صلاحية."
+        );
+
+        return;
+      }
+
+      editing = null;
+
+      $("#foundationForm")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      return;
+    }
+
+
+    /* CANCEL FOUNDATION */
+
+    if (
+      target.id ===
+      "cancelFoundation"
+    ) {
+
+      $("#foundationForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+      editing = null;
+
+      return;
+    }
+
+  }
+);
+
+
+/* =========================================================
+   BRANCH MANAGEMENT
+========================================================= */
+
+function editBranch(id) {
+
+  if (
+    role !== "superadmin"
+  ) {
+
+    alert(
+      "هذه العملية لـ Super Admin فقط."
+    );
+
+    return;
+  }
+
+
+  const branch =
+    branches.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!branch) return;
+
+
+  editing = id;
+
+
+  $("#branchName").value =
+    branch.name || "";
+
+
+  $("#branchId").value =
+    branch.id || "";
+
+
+  $("#branchOrder").value =
+    branch.order ?? "";
+
+
+  $("#branchDescription").value =
+    branch.description || "";
+
+
+  $("#branchActive").checked =
+    branch.active !== false;
+
+
+  $("#branchId").disabled =
+    true;
+
+
+  $("#branchForm")
+    ?.classList.remove(
+      "hidden"
+    );
+
+
+  openTab("branches");
+
+}
+
+
+async function setBranchActive(
+  id,
+  active
+) {
+
+  if (
+    role !== "superadmin"
+  ) {
+
+    alert(
+      "هذه العملية لـ Super Admin فقط."
+    );
+
+    return;
+  }
+
+
+  const action =
+    active
+      ? "تفعيل"
+      : "تعطيل";
+
+
+  if (
+    !confirm(
+      `هل تريد ${action} هذا الفرع؟`
+    )
+  ) {
+
+    return;
+  }
+
+
+  try {
+
+    await updateDoc(
+      doc(
+        db,
+        "branches",
+        id
+      ),
+      {
+        active,
+        updatedAt:
+          serverTimestamp()
+      }
+    );
+
+
+    await refresh();
+
+  } catch (error) {
+
+    alert(
+      `فشل ${action} الفرع:\n` +
+      errorMessage(error)
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   BRANCH FORM
+========================================================= */
+
+$("#addBranchBtn")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        alert(
+          "هذه العملية لـ Super Admin فقط."
+        );
+
+        return;
+      }
+
+
+      editing = null;
+
+
+      $("#branchForm")
+        ?.classList.remove(
+          "hidden"
+        );
+
+
+      $("#branchName").value = "";
+
+      $("#branchId").value = "";
+
+      $("#branchOrder").value = "";
+
+      $("#branchDescription").value = "";
+
+      $("#branchActive").checked =
+        true;
+
+      $("#branchId").disabled =
+        false;
+
+    }
+  );
+
+
+$("#cancelBranch")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("#branchForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+      editing = null;
+
+      $("#branchId").disabled =
+        false;
+
+    }
+  );
+
+
+$("#branchForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        return msg(
+          $("#branchMsg"),
+          "هذه العملية لـ Super Admin فقط.",
+          true
+        );
+
+      }
+
+
+      const name =
+        $("#branchName")
+          .value
+          .trim();
+
+
+      const id =
+        $("#branchId")
+          .value
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "_");
+
+
+      const order =
+        Number(
+          $("#branchOrder").value
+        ) || 9999;
+
+
+      const description =
+        $("#branchDescription")
+          .value
+          .trim();
+
+
+      const active =
+        $("#branchActive")
+          .checked;
+
+
+      if (!name) {
+
+        return msg(
+          $("#branchMsg"),
+          "أدخل اسم الفرع.",
+          true
+        );
+
+      }
+
+
+      if (!id) {
+
+        return msg(
+          $("#branchMsg"),
+          "أدخل معرف الفرع.",
+          true
+        );
+
+      }
+
+
+      if (
+        !/^[a-zA-Z0-9_-]+$/.test(id)
+      ) {
+
+        return msg(
+          $("#branchMsg"),
+          "معرف الفرع يجب أن يحتوي على أحرف إنجليزية وأرقام و _ أو - فقط.",
+          true
+        );
+
+      }
+
+
+      try {
+
+        const branchRef =
+          doc(
+            db,
+            "branches",
+            id
+          );
+
+
+        if (!editing) {
+
+          const exists =
+            await getDoc(
+              branchRef
+            );
+
+
+          if (
+            exists.exists()
+          ) {
+
+            return msg(
+              $("#branchMsg"),
+              "هذا Branch ID موجود بالفعل.",
+              true
+            );
+
+          }
+
+
+          await setDoc(
+            branchRef,
+            {
+              name,
+              order,
+              description,
+              active,
+              createdAt:
+                serverTimestamp(),
+              updatedAt:
+                serverTimestamp()
+            }
+          );
+
+        } else {
+
+          await updateDoc(
+            branchRef,
+            {
+              name,
+              order,
+              description,
+              active,
+              updatedAt:
+                serverTimestamp()
+            }
+          );
+
+        }
+
+
+        msg(
+          $("#branchMsg"),
+          "تم حفظ الفرع بنجاح.",
+          false
+        );
+
+
+        $("#branchForm")
+          .classList.add(
+            "hidden"
+          );
+
+
+        $("#branchId").disabled =
+          false;
+
+
+        editing = null;
+
+
+        await refresh();
+
+
+      } catch (error) {
+
+        console.error(
+          "Branch save error:",
+          error
+        );
+
+        msg(
+          $("#branchMsg"),
+          "فشل حفظ الفرع:\n" +
+          errorMessage(error),
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   REVIEW SUGGESTION
+========================================================= */
+
+async function review(
+  id,
+  approve
+) {
+
+  const suggestion =
+    suggestions.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!suggestion) {
+
+    alert(
+      "الاقتراح غير موجود."
+    );
+
+    return;
+  }
+
+
+  try {
+
+    if (approve) {
+
+      const data = {
+        ...suggestion
+      };
+
+
+      delete data.id;
+      delete data.status;
+      delete data.reviewedAt;
+      delete data.reviewedBy;
+
+
+      data.createdAt =
+        serverTimestamp();
+
+      data.updatedAt =
+        serverTimestamp();
+
+
+      if (
+        suggestion.contentType ===
+        "foundation"
+      ) {
+
+        await addDoc(
+          collection(
+            db,
+            "foundations"
+          ),
+          data
+        );
+
+      } else {
+
+        await addDoc(
+          collection(
+            db,
+            "resources"
+          ),
+          data
+        );
+
+      }
+
+    }
+
+
+    await updateDoc(
+      doc(
+        db,
+        "suggestions",
+        id
+      ),
+      {
+        status:
+          approve
+            ? "approved"
+            : "rejected",
+
+        reviewedAt:
+          serverTimestamp(),
+
+        reviewedBy:
+          auth.currentUser?.uid || ""
+      }
+    );
+
+
+    await refresh();
+
+  } catch (error) {
+
+    console.error(
+      "Suggestion review error:",
+      error
+    );
+
+    alert(
+      "فشلت عملية مراجعة الاقتراح:\n\n" +
+      errorMessage(error)
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   EDIT SUBJECT
+========================================================= */
+
+function editSubject(id) {
+
+  if (
+    !can("content_admin")
+  ) {
+
+    alert(
+      "ليس لديك صلاحية."
+    );
+
+    return;
+  }
+
+
+  const subject =
+    subjects.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!subject) return;
+
+
+  editing = id;
+
+
+  $("#subjectName").value =
+    subject.name || "";
+
+
+  $("#subjectOrder").value =
+    subject.order ?? "";
+
+
+  $("#subjectDescription").value =
+    subject.description || "";
+
+
+  renderSubjectBranchCheckboxes(
+    arr(
+      subject.branchIds
+    )
+  );
+
+
+  $("#subjectForm")
+    ?.classList.remove(
+      "hidden"
+    );
+
+
+  openTab("subjects");
+
+}
+
+
+/* =========================================================
+   EDIT RESOURCE
+========================================================= */
+
+function editResource(id) {
+
+  if (
+    !can("content_admin")
+  ) {
+
+    alert(
+      "ليس لديك صلاحية."
+    );
+
+    return;
+  }
+
+
+  const resource =
+    resources.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!resource) return;
+
+
+  editing = id;
+
+
+  $("#resourceTitle").value =
+    resource.title || "";
+
+
+  $("#resourceUrl").value =
+    resource.url || "";
+
+
+  $("#resourceBranch").value =
+    resource.branchId ||
+    arr(
+      resource.branchIds
+    )[0] ||
+    "";
+
+
+  updateSubjectSelect(
+    $("#resourceBranch").value,
+    "#resourceSubject"
+  );
+
+
+  $("#resourceSubject").value =
+    resource.subjectId || "";
+
+
+  $("#resourceType").value =
+    resource.type || "";
+
+
+  $("#resourceCategory").value =
+    resource.category ||
+    resource.categoryId ||
+    "";
+
+
+  $("#resourceKeywords").value =
+    arr(
+      resource.keywords
+    ).join(", ");
+
+
+  $("#resourceOrder").value =
+    resource.order ?? "";
+
+
+  $("#resourceDescription").value =
+    resource.description || "";
+
+
+  $("#resourceForm")
+    ?.classList.remove(
+      "hidden"
+    );
+
+
+  openTab("resources");
+
+}
+
+
+/* =========================================================
+   EDIT FOUNDATION
+========================================================= */
+
+function editFoundation(id) {
+
+  if (
+    !can("content_admin")
+  ) {
+
+    alert(
+      "ليس لديك صلاحية."
+    );
+
+    return;
+  }
+
+
+  const foundation =
+    foundations.find(
+      item =>
+        item.id === id
+    );
+
+
+  if (!foundation) return;
+
+
+  editing = id;
+
+
+  $("#foundationTitle").value =
+    foundation.title || "";
+
+
+  $("#foundationUrl").value =
+    foundation.url || "";
+
+
+  $("#foundationBranch").value =
+    foundation.branchId ||
+    arr(
+      foundation.branchIds
+    )[0] ||
+    "";
+
+
+  updateSubjectSelect(
+    $("#foundationBranch").value,
+    "#foundationSubject"
+  );
+
+
+  $("#foundationSubject").value =
+    foundation.subjectId || "";
+
+
+  $("#foundationLevel").value =
+    foundation.level ||
+    "beginner";
+
+
+  $("#foundationType").value =
+    foundation.type ||
+    "lesson";
+
+
+  $("#foundationKeywords").value =
+    arr(
+      foundation.keywords
+    ).join(", ");
+
+
+  $("#foundationOrder").value =
+    foundation.order ?? "";
+
+
+  $("#foundationDescription").value =
+    foundation.description || "";
+
+
+  $("#foundationForm")
+    ?.classList.remove(
+      "hidden"
+    );
+
+
+  openTab("foundations");
+
+}
+
+
+/* =========================================================
+   JSON PARSER
+========================================================= */
+
+function parseJSON(
+  selector,
+  messageSelector
+) {
+
+  const element =
+    $(selector);
+
+
+  if (!element) {
+
+    msg(
+      $(messageSelector),
+      "حقل JSON غير موجود.",
+      true
+    );
+
+    return null;
+  }
+
+
+  const text =
+    element.value.trim();
+
+
+  if (!text) {
+
+    msg(
+      $(messageSelector),
+      "أدخل بيانات JSON أولًا.",
+      true
+    );
+
+    return null;
+  }
+
+
+  try {
+
+    return JSON.parse(text);
+
+  } catch {
+
+    msg(
+      $(messageSelector),
+      "JSON غير صالح.",
+      true
+    );
+
+    return null;
+
+  }
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+$("#loginBtn")
+  ?.addEventListener(
+    "click",
+    async () => {
+
+      const email =
+        $("#email")
+          ?.value
+          .trim();
+
+      const password =
+        $("#password")
+          ?.value || "";
+
+
+      if (
+        !email ||
+        !password
+      ) {
+
+        return msg(
+          $("#loginMsg"),
+          "أدخل البريد الإلكتروني وكلمة المرور.",
+          true
+        );
+
+      }
+
+
+      try {
+
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Login error:",
+          error
+        );
+
+        msg(
+          $("#loginMsg"),
+          "فشل تسجيل الدخول. تأكد من البيانات وصلاحية الحساب.",
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+$("#password")
+  ?.addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key ===
+        "Enter"
+      ) {
+
+        $("#loginBtn")
+          ?.click();
+
+      }
+
+    }
+  );
+
+
+$("#logoutBtn")
+  ?.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await signOut(
+          auth
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Logout error:",
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   BRANCH -> SUBJECT
+========================================================= */
+
+$("#resourceBranch")
+  ?.addEventListener(
+    "change",
+    () => {
+
+      updateSubjectSelect(
+        $("#resourceBranch").value,
+        "#resourceSubject"
+      );
+
+    }
+  );
+
+
+$("#foundationBranch")
+  ?.addEventListener(
+    "change",
+    () => {
+
+      updateSubjectSelect(
+        $("#foundationBranch").value,
+        "#foundationSubject"
+      );
+
+    }
+  );
+
+
+/* =========================================================
+   SUBJECT FORM
+========================================================= */
+
+$("#subjectForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (
+        !can("content_admin")
+      ) {
+
+        return msg(
+          $("#subjectMsg"),
+          "ليس لديك صلاحية.",
+          true
+        );
+
+      }
+
+
+      const data = {
+
+        name:
+          $("#subjectName")
+            .value
+            .trim(),
+
+        branchIds:
+          $$("#subjectBranches input[type=checkbox]:checked")
+            .map(
+              checkbox =>
+                checkbox.value
+            ),
+
+        description:
+          $("#subjectDescription")
+            .value
+            .trim(),
+
+        order:
+          Number(
+            $("#subjectOrder").value
+          ) || 9999,
+
+        updatedAt:
+          serverTimestamp()
+
+      };
+
+
+      if (!data.name) {
+
+        return msg(
+          $("#subjectMsg"),
+          "أدخل اسم المادة.",
+          true
+        );
+
+      }
+
+
+      if (
+        !data.branchIds.length
+      ) {
+
+        return msg(
+          $("#subjectMsg"),
+          "اختر فرعًا واحدًا على الأقل.",
+          true
+        );
+
+      }
+
+
+      try {
+
+        if (editing) {
+
+          await updateDoc(
+            doc(
+              db,
+              "subjects",
+              editing
+            ),
+            data
+          );
+
+        } else {
+
+          await addDoc(
+            collection(
+              db,
+              "subjects"
+            ),
+            {
+              ...data,
+              createdAt:
+                serverTimestamp()
+            }
+          );
+
+        }
+
+
+        editing = null;
+
+
+        $("#subjectForm")
+          .classList.add(
+            "hidden"
+          );
+
+
+        await refresh();
+
+      } catch (error) {
+
+        console.error(
+          "Subject save error:",
+          error
+        );
+
+        msg(
+          $("#subjectMsg"),
+          "فشل حفظ المادة:\n" +
+          errorMessage(error),
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   RESOURCE FORM
+========================================================= */
+
+$("#resourceForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (
+        !can("content_admin")
+      ) {
+
+        return msg(
+          $("#resourceMsg"),
+          "ليس لديك صلاحية.",
+          true
+        );
+
+      }
+
+
+      const url =
+        $("#resourceUrl")
+          .value
+          .trim();
+
+
+      try {
+
+        new URL(url);
+
+      } catch {
+
+        return msg(
+          $("#resourceMsg"),
+          "الرابط غير صالح.",
+          true
+        );
+
+      }
+
+
+      const normalized =
+        normalizeImportURL(url);
+
+
+      const duplicate =
+        resources.some(
+          resource =>
+            normalizeImportURL(
+              resource.url
+            ) === normalized &&
+            resource.id !== editing
+        );
+
+
+      if (duplicate) {
+
+        return msg(
+          $("#resourceMsg"),
+          "هذا الرابط موجود بالفعل.",
+          true
+        );
+
+      }
+
+
+      const branchId =
+        $("#resourceBranch")
+          .value;
+
+
+      const subjectId =
+        $("#resourceSubject")
+          .value;
+
+
+      if (!branchId) {
+
+        return msg(
+          $("#resourceMsg"),
+          "اختر الفرع.",
+          true
+        );
+
+      }
+
+
+      if (!subjectId) {
+
+        return msg(
+          $("#resourceMsg"),
+          "اختر المادة.",
+          true
+        );
+
+      }
+
+
+      const data = {
+
+        title:
+          $("#resourceTitle")
+            .value
+            .trim(),
+
+        url,
+
+        branchId,
+
+        branchIds: [
+          branchId
+        ],
+
+        subjectId,
+
+        type:
+          $("#resourceType")
+            .value
+            .trim(),
+
+        category:
+          $("#resourceCategory")
+            .value
+            .trim(),
+
+        keywords:
+          $("#resourceKeywords")
+            .value
+            .split(",")
+            .map(
+              item =>
+                item.trim()
+            )
+            .filter(Boolean),
+
+        order:
+          Number(
+            $("#resourceOrder")
+              .value
+          ) || 9999,
+
+        description:
+          $("#resourceDescription")
+            .value
+            .trim(),
+
+        updatedAt:
+          serverTimestamp()
+
+      };
+
+
+      if (!data.title) {
+
+        return msg(
+          $("#resourceMsg"),
+          "أدخل عنوان المصدر.",
+          true
+        );
+
+      }
+
+
+      try {
+
+        if (editing) {
+
+          await updateDoc(
+            doc(
+              db,
+              "resources",
+              editing
+            ),
+            data
+          );
+
+        } else {
+
+          await addDoc(
+            collection(
+              db,
+              "resources"
+            ),
+            {
+              ...data,
+              createdAt:
+                serverTimestamp()
+            }
+          );
+
+        }
+
+
+        editing = null;
+
+        $("#resourceForm")
+          .classList.add(
+            "hidden"
+          );
+
+        await refresh();
+
+      } catch (error) {
+
+        console.error(
+          "Resource save error:",
+          error
+        );
+
+        msg(
+          $("#resourceMsg"),
+          "فشل حفظ المصدر:\n" +
+          errorMessage(error),
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   FOUNDATION FORM
+========================================================= */
+
+$("#foundationForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (
+        !can("content_admin")
+      ) {
+
+        return msg(
+          $("#foundationMsg"),
+          "ليس لديك صلاحية.",
+          true
+        );
+
+      }
+
+
+      const url =
+        $("#foundationUrl")
+          .value
+          .trim();
+
+
+      try {
+
+        new URL(url);
+
+      } catch {
+
+        return msg(
+          $("#foundationMsg"),
+          "الرابط غير صالح.",
+          true
+        );
+
+      }
+
+
+      const normalized =
+        normalizeImportURL(url);
+
+
+      const duplicate =
+        foundations.some(
+          foundation =>
+            normalizeImportURL(
+              foundation.url
+            ) === normalized &&
+            foundation.id !== editing
+        );
+
+
+      if (duplicate) {
+
+        return msg(
+          $("#foundationMsg"),
+          "هذا الرابط موجود بالفعل.",
+          true
+        );
+
+      }
+
+
+      const branch =
+        $("#foundationBranch")
+          .value;
+
+
+      const subject =
+        $("#foundationSubject")
+          .value;
+
+
+      if (!branch) {
+
+        return msg(
+          $("#foundationMsg"),
+          "اختر الفرع.",
+          true
+        );
+
+      }
+
+
+      if (!subject) {
+
+        return msg(
+          $("#foundationMsg"),
+          "اختر المادة.",
+          true
+        );
+
+      }
+
+
+      const data = {
+
+        title:
+          $("#foundationTitle")
+            .value
+            .trim(),
+
+        url,
+
+        branchIds: [
+          branch
+        ],
+
+        branchId:
+          branch,
+
+        subjectId:
+          subject,
+
+        level:
+          $("#foundationLevel")
+            .value,
+
+        type:
+          $("#foundationType")
+            .value,
+
+        keywords:
+          $("#foundationKeywords")
+            .value
+            .split(",")
+            .map(
+              item =>
+                item.trim()
+            )
+            .filter(Boolean),
+
+        order:
+          Number(
+            $("#foundationOrder")
+              .value
+          ) || 9999,
+
+        description:
+          $("#foundationDescription")
+            .value
+            .trim(),
+
+        updatedAt:
+          serverTimestamp()
+
+      };
+
+
+      if (!data.title) {
+
+        return msg(
+          $("#foundationMsg"),
+          "أدخل عنوان التأسيس.",
+          true
+        );
+
+      }
+
+
+      try {
+
+        if (editing) {
+
+          await updateDoc(
+            doc(
+              db,
+              "foundations",
+              editing
+            ),
+            data
+          );
+
+        } else {
+
+          await addDoc(
+            collection(
+              db,
+              "foundations"
+            ),
+            {
+              ...data,
+              createdAt:
+                serverTimestamp()
+            }
+          );
+
+        }
+
+
+        editing = null;
+
+        $("#foundationForm")
+          .classList.add(
+            "hidden"
+          );
+
+        await refresh();
+
+      } catch (error) {
+
+        console.error(
+          "Foundation save error:",
+          error
+        );
+
+        msg(
+          $("#foundationMsg"),
+          "فشل حفظ التأسيس:\n" +
+          errorMessage(error),
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   BULK IMPORT
+========================================================= */
+
+async function importItems(
+  textSelector,
+  collectionName,
+  messageSelector,
+  type
+) {
+
+  if (
+    !can("content_admin")
+  ) {
+
+    return msg(
+      $(messageSelector),
+      "ليس لديك صلاحية للاستيراد الجماعي.",
+      true
+    );
+
+  }
+
+
+  const list =
+    parseJSON(
+      textSelector,
+      messageSelector
+    );
+
+
+  if (!Array.isArray(list)) {
+
+    return msg(
+      $(messageSelector),
+      "يجب أن يكون JSON عبارة عن Array.",
+      true
+    );
+
+  }
+
+
+  if (!list.length) {
+
+    return msg(
+      $(messageSelector),
+      "ملف JSON فارغ.",
+      true
+    );
+
+  }
+
+
+  msg(
+    $(messageSelector),
+    "جاري فحص البيانات...",
+    false
+  );
+
+
+  const existingSnap =
+    await getDocs(
+      collection(
+        db,
+        collectionName
+      )
+    );
+
+
+  const existingURLs =
+    new Set();
+
+
+  existingSnap.docs
+    .forEach(item => {
+
+      const url =
+        normalizeImportURL(
+          item.data().url
+        );
+
+      if (url) {
+        existingURLs.add(url);
+      }
+
+    });
+
+
+  const validItems = [];
+
+  const batchURLs =
+    new Set();
+
+
+  let duplicate = 0;
+  let invalid = 0;
+
+  const errors = [];
+
+
+  for (
+    let index = 0;
+    index < list.length;
+    index++
+  ) {
+
+    const item =
+      list[index];
+
+    const number =
+      index + 1;
+
+
+    if (
+      !item ||
+      typeof item !== "object" ||
+      Array.isArray(item)
+    ) {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: البيانات غير صحيحة`
+      );
+
+      continue;
+    }
+
+
+    const url =
+      String(
+        item.url ?? ""
+      ).trim();
+
+
+    if (!url) {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: لا يوجد رابط`
+      );
+
+      continue;
+    }
+
+
+    try {
+
+      new URL(url);
+
+    } catch {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: الرابط غير صالح`
+      );
+
+      continue;
+    }
+
+
+    const normalized =
+      normalizeImportURL(url);
+
+
+    if (
+      existingURLs.has(
+        normalized
+      ) ||
+      batchURLs.has(
+        normalized
+      )
+    ) {
+
+      duplicate++;
+
+      continue;
+    }
+
+
+    const title =
+      String(
+        item.title ?? ""
+      ).trim();
+
+
+    if (!title) {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: لا يوجد عنوان`
+      );
+
+      continue;
+    }
+
+
+    const subjectId =
+      String(
+        item.subjectId ?? ""
+      ).trim();
+
+
+    if (!subjectId) {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: لا يوجد subjectId`
+      );
+
+      continue;
+    }
+
+
+    let branchIds =
+      Array.isArray(
+        item.branchIds
+      )
+        ? item.branchIds
+        : [];
+
+
+    if (
+      !branchIds.length &&
+      item.branchId
+    ) {
+
+      branchIds = [
+        item.branchId
+      ];
+
+    }
+
+
+    branchIds =
+      branchIds
+        .map(
+          branch =>
+            String(
+              branch
+            ).trim()
+        )
+        .filter(Boolean);
+
+
+    if (
+      !branchIds.length
+    ) {
+
+      invalid++;
+
+      errors.push(
+        `العنصر ${number}: لا يوجد branchId`
+      );
+
+      continue;
+    }
+
+
+    const data = {
+      ...item
+    };
+
+
+    delete data.id;
+    delete data.createdAt;
+    delete data.updatedAt;
+    delete data.status;
+    delete data.reviewedAt;
+    delete data.reviewedBy;
+
+
+    data.title =
+      title;
+
+    data.url =
+      url;
+
+    data.subjectId =
+      subjectId;
+
+    data.branchIds =
+      branchIds;
+
+    data.branchId =
+      branchIds[0];
+
+
+    data.keywords =
+      Array.isArray(
+        item.keywords
+      )
+        ? item.keywords
+            .map(
+              keyword =>
+                String(
+                  keyword
+                ).trim()
+            )
+            .filter(Boolean)
+        : String(
+            item.keywords || ""
+          )
+            .split(",")
+            .map(
+              keyword =>
+                keyword.trim()
+            )
+            .filter(Boolean);
+
+
+    data.order =
+      Number(
+        item.order
+      ) || 9999;
+
+
+    if (
+      type === "resource"
+    ) {
+
+      data.type =
+        String(
+          item.type || ""
+        ).trim();
+
+      data.category =
+        String(
+          item.category || ""
+        ).trim();
+
+    }
+
+
+    if (
+      type === "foundation"
+    ) {
+
+      data.level =
+        item.level ||
+        "beginner";
+
+      data.type =
+        item.type ||
+        "lesson";
+
+    }
+
+
+    data.createdAt =
+      serverTimestamp();
+
+    data.updatedAt =
+      serverTimestamp();
+
+
+    batchURLs.add(
+      normalized
+    );
+
+
+    validItems.push(
+      data
+    );
+
+  }
+
+
+  if (
+    !validItems.length
+  ) {
+
+    return msg(
+      $(messageSelector),
+
+      `لم تتم إضافة أي عنصر.
+
+تم فحص:
+${list.length}
+
+المكرر:
+${duplicate}
+
+غير الصالح:
+${invalid}
+
+${errors
+  .slice(0, 10)
+  .join("\n")}`,
+
+      true
+    );
+
+  }
+
+
+  const CHUNK_SIZE =
+    450;
+
+  let added = 0;
+
+
+  try {
+
+    for (
+      let start = 0;
+      start < validItems.length;
+      start += CHUNK_SIZE
+    ) {
+
+      const chunk =
+        validItems.slice(
+          start,
+          start + CHUNK_SIZE
+        );
+
+
+      const batch =
+        writeBatch(db);
+
+
+      chunk.forEach(data => {
+
+        const reference =
+          doc(
+            collection(
+              db,
+              collectionName
+            )
+          );
+
+
+        batch.set(
+          reference,
+          data
+        );
+
+      });
+
+
+      await batch.commit();
+
+      added +=
+        chunk.length;
+
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "Bulk error:",
+      error
+    );
+
+    return msg(
+      $(messageSelector),
+
+      `حدث خطأ أثناء الحفظ.
+
+${errorMessage(error)}
+
+تم حفظ:
+${added}`,
+
+      true
+    );
+
+  }
+
+
+  msg(
+    $(messageSelector),
+
+    `تم الاستيراد بنجاح.
+
+تم فحص:
+${list.length}
+
+تمت الإضافة:
+${added}
+
+المكرر:
+${duplicate}
+
+غير الصالح:
+${invalid}`,
+
+    false
+  );
+
+
+  await refresh();
+
+}
+
+
+$("#importResources")
+  ?.addEventListener(
+    "click",
+    () =>
+      importItems(
+        "#bulkResources",
+        "resources",
+        "#bulkResourceMsg",
+        "resource"
+      )
+  );
+
+
+$("#importFoundations")
+  ?.addEventListener(
+    "click",
+    () =>
+      importItems(
+        "#bulkFoundations",
+        "foundations",
+        "#bulkFoundationMsg",
+        "foundation"
+      )
+  );
+
+
+/* =========================================================
+   ADMIN MANAGEMENT
+========================================================= */
+
+$("#addAdminBtn")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        alert(
+          "هذه العملية لـ Super Admin فقط."
+        );
+
+        return;
+      }
+
+
+      $("#adminForm")
+        ?.classList.remove(
+          "hidden"
+        );
+
+    }
+  );
+
+
+$("#cancelAdmin")
+  ?.addEventListener(
+    "click",
+    () => {
+
+      $("#adminForm")
+        ?.classList.add(
+          "hidden"
+        );
+
+    }
+  );
+
+
+$("#adminForm")
+  ?.addEventListener(
+    "submit",
+    async event => {
+
+      event.preventDefault();
+
+
+      if (
+        role !== "superadmin"
+      ) {
+
+        return msg(
+          $("#adminMsg"),
+          "هذه العملية لـ Super Admin فقط.",
+          true
+        );
+
+      }
+
+
+      const uid =
+        $("#adminUid")
+          .value
+          .trim();
+
+
+      if (!uid) {
+
+        return msg(
+          $("#adminMsg"),
+          "أدخل Firebase User UID.",
+          true
+        );
+
+      }
+
+
+      const adminData = {
+
+        role:
+          $("#adminRole").value,
+
+        active:
+          $("#adminActive").checked,
+
+        updatedAt:
+          serverTimestamp()
+
+      };
+
+
+      try {
+
+        const adminRef =
+          doc(
+            db,
+            "admins",
+            uid
+          );
+
+
+        const existing =
+          await getDoc(
+            adminRef
+          );
+
+
+        if (
+          existing.exists()
+        ) {
+
+          await updateDoc(
+            adminRef,
+            adminData
+          );
+
+        } else {
+
+          await setDoc(
+            adminRef,
+            {
+              ...adminData,
+
+              createdAt:
+                serverTimestamp()
+            }
+          );
+
+        }
+
+
+        msg(
+          $("#adminMsg"),
+          "تم حفظ الأدمن بنجاح.",
+          false
+        );
+
+
+        $("#adminForm")
+          .classList.add(
+            "hidden"
+          );
+
+
+        $("#adminUid")
+          .value = "";
+
+
+        await refresh();
+
+      } catch (error) {
+
+        console.error(
+          "Admin save error:",
+          error
+        );
+
+        msg(
+          $("#adminMsg"),
+          "فشل حفظ الأدمن:\n" +
+          errorMessage(error),
+          true
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   AUTH STATE
+========================================================= */
+
+onAuthStateChanged(
+  auth,
+  async user => {
+
+    if (!user) {
+
+      role = null;
+
+      $("#loginSection")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      $("#dashboard")
+        ?.classList.add(
+          "hidden"
+        );
+
+      return;
+    }
+
+
+    try {
+
+      role =
+        await loadRole(
+          user
+        );
+
+
+      $("#loginSection")
+        ?.classList.add(
+          "hidden"
+        );
+
+      $("#dashboard")
+        ?.classList.remove(
+          "hidden"
+        );
+
+
+      if ($("#adminEmail")) {
+
+        $("#adminEmail")
+          .textContent =
+          user.email ||
+          user.uid;
+
+      }
+
+
+      if ($("#roleBadge")) {
+
+        $("#roleBadge")
+          .textContent =
+          role;
+
+      }
+
+
+      await refresh();
+
+
+    } catch (error) {
+
+      console.error(
+        "Admin authentication error:",
+        error
+      );
+
+
+      role = null;
+
+
+      try {
+
+        await signOut(
+          auth
+        );
+
+      } catch {}
+
+
+      $("#loginSection")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      $("#dashboard")
+        ?.classList.add(
+          "hidden"
+        );
+
+
+      msg(
+        $("#loginMsg"),
+        "هذا الحساب ليس لديه صلاحية أدمن.",
+        true
+      );
+
+    }
+
+  }
+);
