@@ -35,6 +35,16 @@ const msg = $("#suggestMsg");
 const suggestLoading = $("#suggestLoading");
 const suggestLoadingText = $("#suggestLoadingText");
 
+let branches = [];
+
+async function loadBranches() {
+  try {
+    const snap = await getDocs(collection(db, "branches"));
+    branches = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(x => x.active !== false).sort((a,b)=>(a.order??9999)-(b.order??9999));
+    if (branch) branch.innerHTML = `<option value="">اختر الفرع</option>` + branches.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join("");
+  } catch (e) { console.error("Load branches error:", e); }
+}
+
 
 /* =========================================================
    MESSAGE
@@ -145,6 +155,8 @@ async function loadSubjects() {
   }
 }
 
+
+loadBranches().then(loadSubjects);
 
 /* =========================================================
    CONTENT TYPE
