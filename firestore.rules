@@ -1,0 +1,179 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* =====================================================
+       ADMIN HELPERS
+    ===================================================== */
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        ).data.active == true;
+    }
+
+    function adminRole() {
+      return isAdmin()
+        ? get(
+            /databases/$(database)/documents/admins/$(request.auth.uid)
+          ).data.role
+        : "";
+    }
+
+    function isReviewer() {
+      return isAdmin()
+        && (
+          adminRole() == "reviewer" ||
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin"
+        );
+    }
+
+    function isContentAdmin() {
+      return isAdmin()
+        && (
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin"
+        );
+    }
+
+    function isSuperAdmin() {
+      return isAdmin()
+        && adminRole() == "superadmin";
+    }
+
+
+    /* =====================================================
+       ADMINS
+    ===================================================== */
+
+    match /admins/{uid} {
+
+      /*
+       * الأدمن يستطيع قراءة بياناته فقط.
+       * الـ Super Admin يستطيع قراءة كل الأدمنز.
+       */
+      allow read: if isSuperAdmin()
+                  || (isAdmin() && request.auth.uid == uid);
+
+      /*
+       * إنشاء أدمن جديد:
+       * Super Admin فقط.
+       */
+      allow create: if isSuperAdmin();
+
+      /*
+       * تعديل الأدمنز:
+       * Super Admin فقط.
+       */
+      allow update: if isSuperAdmin();
+
+      /*
+       * لا نحذف الأدمن نهائيًا.
+       * نستخدم active: false بدل الحذف.
+       */
+      allow delete: if false;
+    }
+
+
+    /* =====================================================
+       SUBJECTS
+    ===================================================== */
+
+    match /subjects/{subjectId} {
+
+      /*
+       * الموقع يحتاج قراءة المواد.
+       */
+      allow read: if true;
+
+      /*
+       * إضافة / تعديل / حذف:
+       * Content Admin أو Super Admin.
+       */
+      allow create, update, delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       RESOURCES
+    ===================================================== */
+
+    match /resources/{resourceId} {
+
+      /*
+       * الطلاب يستطيعون قراءة المصادر.
+       */
+      allow read: if true;
+
+      /*
+       * إدارة المصادر.
+       */
+      allow create, update, delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       FOUNDATIONS
+    ===================================================== */
+
+    match /foundations/{foundationId} {
+
+      /*
+       * التأسيس متاح للقراءة.
+       */
+      allow read: if true;
+
+      /*
+       * إدارة التأسيس.
+       */
+      allow create, update, delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       SUGGESTIONS
+    ===================================================== */
+
+    match /suggestions/{suggestionId} {
+
+      /*
+       * الطلاب يحتاجون إنشاء اقتراح.
+       */
+      allow create: if true;
+
+      /*
+       * الأدمنز يستطيعون قراءة الاقتراحات.
+       */
+      allow read: if isReviewer();
+
+      /*
+       * Reviewer وما فوق يستطيع مراجعة الاقتراح.
+       */
+      allow update: if isReviewer();
+
+      /*
+       * لا نحذف الاقتراحات من Firestore.
+       */
+      allow delete: if false;
+    }
+
+
+    /* =====================================================
+       DEFAULT DENY
+    ===================================================== */
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
