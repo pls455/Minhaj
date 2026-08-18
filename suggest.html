@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#080b16"
+  >
+
+  <link
+    rel="manifest"
+    href="manifest.json"
+  >
+
+  <link
+    rel="icon"
+    href="assets/logo.svg"
+  >
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  >
+
+  <title>اقتراح محتوى | مِنهَاج</title>
+
+  <style>
+
+    /* =====================================================
+       LOADING OVERLAY
+    ===================================================== */
+
+    .suggest-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
+
+      background:
+        rgba(5, 8, 18, 0.82);
+
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+
+      opacity: 0;
+      visibility: hidden;
+
+      transition:
+        opacity .25s ease,
+        visibility .25s ease;
+    }
+
+
+    .suggest-loading.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+
+    .loading-box {
+      width: min(380px, 100%);
+
+      padding: 30px 24px;
+
+      text-align: center;
+
+      border-radius: 22px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(20, 27, 48, .98),
+          rgba(10, 14, 28, .98)
+        );
+
+      border: 1px solid rgba(255,255,255,.10);
+
+      box-shadow:
+        0 25px 80px rgba(0,0,0,.45);
+
+      animation:
+        loadingBoxIn .3s ease;
+    }
+
+
+    @keyframes loadingBoxIn {
+
+      from {
+        opacity: 0;
+        transform: scale(.92) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+
+    }
+
+
+    /* =====================================================
+       SPINNER
+    ===================================================== */
+
+    .loading-spinner {
+      width: 58px;
+      height: 58px;
+
+      margin: 0 auto 20px;
+
+      border-radius: 50%;
+
+      border:
+        4px solid rgba(255,255,255,.10);
+
+      border-top-color:
+        #7c5cff;
+
+      border-right-color:
+        #00d4ff;
+
+      animation:
+        loadingSpin .8s linear infinite;
+
+      box-shadow:
+        0 0 25px rgba(124,92,255,.25);
+    }
+
+
+    @keyframes loadingSpin {
+
+      to {
+        transform: rotate(360deg);
+      }
+
+    }
+
+
+    .loading-title {
+
+      margin: 0 0 8px;
+
+      color: #fff;
+
+      font-size: 20px;
+
+      font-weight: 700;
+    }
+
+
+    .loading-text {
+
+      margin: 0;
+
+      color: rgba(255,255,255,.65);
+
+      font-size: 14px;
+
+      line-height: 1.7;
+    }
+
+
+    .loading-dots {
+
+      display: inline-flex;
+
+      gap: 4px;
+
+      margin-right: 4px;
+    }
+
+
+    .loading-dots span {
+
+      width: 5px;
+      height: 5px;
+
+      border-radius: 50%;
+
+      background: currentColor;
+
+      animation:
+        loadingDot 1.2s infinite;
+    }
+
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: .15s;
+    }
+
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: .30s;
+    }
+
+
+    @keyframes loadingDot {
+
+      0%,
+      60%,
+      100% {
+        opacity: .25;
+        transform: translateY(0);
+      }
+
+      30% {
+        opacity: 1;
+        transform: translateY(-3px);
+      }
+
+    }
+
+
+    /* =====================================================
+       DISABLED FORM
+    ===================================================== */
+
+    #suggestForm.is-loading {
+      pointer-events: none;
+    }
+
+
+    #suggestForm.is-loading
+    button[type="submit"] {
+
+      opacity: .65;
+
+      cursor: not-allowed;
+    }
+
+
+    /* =====================================================
+       SUCCESS MESSAGE
+    ===================================================== */
+
+    #suggestMsg {
+
+      margin-top: 16px;
+
+      line-height: 1.7;
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="background-grid"></div>
+
+
+  <!-- =====================================================
+       LOADING OVERLAY
+  ===================================================== -->
+
+  <div
+    id="suggestLoading"
+    class="suggest-loading"
+    aria-hidden="true"
+  >
+
+    <div
+      class="loading-box"
+      role="status"
+      aria-live="polite"
+    >
+
+      <div
+        class="loading-spinner"
+        aria-hidden="true"
+      ></div>
+
+
+      <h2
+        id="loadingTitle"
+        class="loading-title"
+      >
+        جاري إرسال الاقتراح
+      </h2>
+
+
+      <p
+        id="loadingText"
+        class="loading-text"
+      >
+        جاري فحص الرابط والبيانات
+        <span class="loading-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       NAVBAR
+  ===================================================== -->
+
+  <header class="navbar">
+
+    <a
+      href="index.html"
+      class="logo"
+    >
+
+      <img
+        src="assets/logo.svg"
+        alt="Minhaj"
+      >
+
+      <div>
+
+        <strong>مِنهَاج</strong>
+
+        <small>MINHAJ</small>
+
+      </div>
+
+    </a>
+
+
+    <nav>
+
+      <a href="index.html">
+        الرئيسية
+      </a>
+
+      <a href="subjects.html">
+        المواد
+      </a>
+
+      <a href="resources.html">
+        المصادر
+      </a>
+
+      <a href="foundation.html">
+        التأسيس
+      </a>
+
+      <a
+        class="active"
+        href="suggest.html"
+      >
+        اقتراح محتوى
+      </a>
+
+    </nav>
+
+
+    <button
+      class="menu-btn"
+      type="button"
+      aria-label="فتح القائمة"
+    >
+      ☰
+    </button>
+
+  </header>
+
+
+  <!-- =====================================================
+       MAIN
+  ===================================================== -->
+
+  <main class="page">
+
+    <div class="page-header">
+
+      <span>
+        ساهم في تطوير منهاج
+      </span>
+
+      <h1>
+        ➕ اقتراح محتوى
+      </h1>
+
+      <p>
+        أرسل رابطًا فقط. سيتم فحص الاقتراح
+        ومراجعته قبل ظهوره للطلاب.
+      </p>
+
+    </div>
+
+
+    <!-- ===================================================
+         FORM
+    =================================================== -->
+
+    <form
+      id="suggestForm"
+      class="admin-form public-form"
+    >
+
+      <label for="contentType">
+        نوع المحتوى
+      </label>
+
+      <select
+        id="contentType"
+      >
+
+        <option value="resource">
+          📚 مصدر
+        </option>
+
+        <option value="foundation">
+          🧠 تأسيس
+        </option>
+
+      </select>
+
+
+      <label for="title">
+        العنوان *
+      </label>
+
+      <input
+        id="title"
+        required
+        placeholder="اسم الكتاب أو الدرس"
+      >
+
+
+      <label for="url">
+        الرابط *
+      </label>
+
+      <input
+        id="url"
+        type="url"
+        required
+        placeholder="https://example.com/"
+      >
+
+
+      <div class="form-grid">
+
+        <div>
+
+          <label for="branch">
+            الفرع *
+          </label>
+
+          <select
+            id="branch"
+            required
+          >
+
+            <option value="">
+              اختر الفرع
+            </option>
+
+            <option value="scientific">
+              العلمي
+            </option>
+
+            <option value="literary">
+              الأدبي
+            </option>
+
+            <option value="industrial">
+              الصناعي
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div>
+
+          <label for="subject">
+            المادة *
+          </label>
+
+          <select
+            id="subject"
+            required
+          >
+
+            <option value="">
+              اختر المادة
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <!-- ================================================
+           FOUNDATION FIELDS
+      ================================================= -->
+
+      <div
+        id="foundationFields"
+        class="hidden"
+      >
+
+        <label for="level">
+          مستوى التأسيس
+        </label>
+
+        <select id="level">
+
+          <option value="beginner">
+            مبتدئ
+          </option>
+
+          <option value="intermediate">
+            متوسط
+          </option>
+
+          <option value="advanced">
+            متقدم
+          </option>
+
+        </select>
+
+
+        <label for="foundationType">
+          نوع التأسيس
+        </label>
+
+        <select id="foundationType">
+
+          <option value="lesson">
+            شرح
+          </option>
+
+          <option value="video">
+            فيديو
+          </option>
+
+          <option value="summary">
+            ملخص
+          </option>
+
+          <option value="exercise">
+            تمارين
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- ================================================
+           TYPE
+      ================================================= -->
+
+      <label for="type">
+        النوع / التصنيف
+      </label>
+
+      <input
+        id="type"
+        placeholder="مثال: ملزمة، كتاب، أسئلة"
+      >
+
+
+      <!-- ================================================
+           DESCRIPTION
+      ================================================= -->
+
+      <label for="description">
+        الوصف
+      </label>
+
+      <textarea
+        id="description"
+        rows="4"
+        placeholder="معلومة مختصرة عن المحتوى"
+      ></textarea>
+
+
+      <!-- ================================================
+           KEYWORDS
+      ================================================= -->
+
+      <label for="keywords">
+        الكلمات المفتاحية
+      </label>
+
+      <input
+        id="keywords"
+        placeholder="رياضيات، جبر، توجيهي"
+      >
+
+
+      <!-- ================================================
+           STUDENT NAME
+      ================================================= -->
+
+      <label for="studentName">
+        اسمك (اختياري)
+      </label>
+
+      <input
+        id="studentName"
+        maxlength="80"
+        placeholder="اسم مستعار"
+      >
+
+
+      <!-- ================================================
+           SUBMIT
+      ================================================= -->
+
+      <button
+        id="submitSuggestBtn"
+        class="btn primary"
+        type="submit"
+      >
+        🚀 إرسال للمراجعة
+      </button>
+
+
+      <!-- ================================================
+           MESSAGE
+      ================================================= -->
+
+      <div
+        id="suggestMsg"
+      ></div>
+
+    </form>
+
+  </main>
+
+
+  <!-- =====================================================
+       FOOTER
+  ===================================================== -->
+
+  <footer>
+
+    <span>
+      © 2026 مِنهَاج | Minhaj
+    </span>
+
+    <span>
+      سيتم مراجعة كل إضافة قبل النشر
+    </span>
+
+  </footer>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+  ===================================================== -->
+
+  <script
+    type="module"
+    src="js/suggest.js"
+  ></script>
+
+</body>
+
+</html>
