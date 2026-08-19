@@ -51,12 +51,7 @@ const arr = (value) =>
       : [];
 
 
-const defaultBranches = {
-  scientific: "العلمي",
-  literary: "الأدبي",
-  industrial: "الصناعي"
-};
-
+let branches = {};
 let branchRecords = [];
 let categories = [];
 
@@ -68,6 +63,7 @@ let resources = [];
 let foundations = [];
 let suggestions = [];
 let admins = [];
+let editingBranch = null;
 
 let editing = null;
 
@@ -130,189 +126,74 @@ function errorMessage(error) {
    BRANCHES
 ========================================================= */
 
-function branchName(id) {
-  const item = branchRecords.find((b) => b.id === id || b.stableId === id);
-  return item?.name || defaultBranches[id] || id;
-}
-
-function branchesHTML(ids = []) {
-  return arr(ids).map(branchName).join("، ") || "غير محدد";
-}
-
-function categoryName(id) {
-  const item = categories.find((c) => c.id === id || c.stableId === id);
-  return item?.name || id || "غير محدد";
-}
-
-function resolveBranch(value) {
-  const v = String(value ?? "").trim();
-  if (!v) return "";
-  const item = branchRecords.find((b) => b.id === v || b.stableId === v || b.name === v);
-  return item?.id || v;
-}
-
-function resolveSubject(value) {
-  const v = String(value ?? "").trim();
-  if (!v) return "";
-  const item = subjects.find((x) => x.id === v || x.stableId === v || x.name === v);
-  return item?.id || v;
-}
-
-function resolveCategory(value) {
-  const v = String(value ?? "").trim();
-  if (!v) return "";
-  const item = categories.find((x) => x.id === v || x.stableId === v || x.name === v);
-  return item?.id || v;
-}
-
-function stableRef(item, prefix) {
-  return String(item?.stableId || item?.uid || item?.id || `${prefix}_${Math.random().toString(36).slice(2, 10)}`).trim();
-}
-
-function newStableUid(prefix) {
+function stableUID(prefix = "ID") {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
 }
 
-function populateTemplateGenerator() {
-  const configs = [
-    ["#templateBranches", branchRecords, "BR"],
-    ["#templateSubjects", subjects, "SUB"],
-    ["#templateCategories", categories, "CAT"]
-  ];
-  configs.forEach(([selector, records]) => {
-    const el = $(selector);
-    if (!el) return;
-    const old = new Set([...el.selectedOptions].map(o => o.value));
-    el.innerHTML = [...records]
-      .sort((a,b)=>(a.order??9999)-(b.order??9999) || String(a.name||"").localeCompare(String(b.name||""), "ar"))
-      .map(x => `<option value="${esc(x.id)}" ${old.has(x.id) ? "selected" : ""}>${esc(x.name)} — ${esc(stableRef(x,"REF"))}</option>`)
-      .join("");
-  });
-}
-
-function selectedValues(selector) {
-  const el = $(selector);
-  return el ? [...el.selectedOptions].map(o => o.value) : [];
-}
-
-function makeAlias(name, used) {
-  let alias = String(name || "ref").trim().toLowerCase()
-    .replace(/[^a-z0-9_\u0600-\u06ff]+/g, "_")
-    .replace(/^_+|_+$/g, "") || "ref";
-  if (/^\d/.test(alias)) alias = `ref_${alias}`;
-  const base = alias; let i = 2;
-  while (used.has(alias)) alias = `${base}_${i++}`;
-  used.add(alias);
-  return alias;
-}
-
-function buildTemplate({all=false} = {}) {
-  const branchIds = all ? branchRecords.map(x => x.id) : selectedValues("#templateBranches");
-  const subjectIds = all ? subjects.map(x => x.id) : selectedValues("#templateSubjects");
-  const categoryIds = all ? categories.map(x => x.id) : selectedValues("#templateCategories");
-  const refs = {};
-  const aliases = { branches:{}, subjects:{}, categories:{} };
-  const used = new Set();
-
-  branchIds.forEach(id => {
-    const x=branchRecords.find(v=>v.id===id);
-    const a=makeAlias(x?.name,used);
-    refs[a]=stableRef(x,"BR");
-    aliases.branches[id]=`$${a}`;
-  });
-  subjectIds.forEach(id => {
-    const x=subjects.find(v=>v.id===id);
-    const a=makeAlias(x?.name,used);
-    refs[a]=stableRef(x,"SUB");
-    aliases.subjects[id]=`$${a}`;
-  });
-  categoryIds.forEach(id => {
-    const x=categories.find(v=>v.id===id);
-    const a=makeAlias(x?.name,used);
-    refs[a]=stableRef(x,"CAT");
-    aliases.categories[id]=`$${a}`;
-  });
-
-  const presets = {};
-  if (!all) {
-    const combinations = [];
-    subjectIds.forEach(sid => {
-      const subject = subjects.find(x=>x.id===sid);
-      const validBranches = branchIds.filter(bid => arr(subject?.branchIds).includes(bid));
-      validBranches.forEach(bid => categoryIds.forEach(cid => {
-        const b=branchRecords.find(x=>x.id===bid), c=categories.find(x=>x.id===cid);
-        const alias=makeAlias(`${b?.name || 'branch'}_${subject?.name || 'subject'}_${c?.name || 'category'}`, used);
-        presets[alias] = {
-          branch: aliases.branches[bid] || `$${makeAlias(b?.name, used)}`,
-          subject: aliases.subjects[sid],
-          category: aliases.categories[cid]
-        };
-        combinations.push(alias);
-      }));
-    });
+async function loadBranchesAndCategories() {
+  const [branchSnap, categorySnap] = await Promise.all([
+    getDocs(collection(db, "branches")).catch(() => ({ docs: [] })),
+    getDocs(collection(db, "categories")).catch(() => ({ docs: [] }))
+  ]);
+  branchRecords = branchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  branchRecords.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name||"").localeCompare(String(b.name||""), "ar"));
+  if (!branchRecords.length) {
+    branchRecords = [
+      { id: "scientific", uid: "scientific", name: "العلمي", icon: "🔬", order: 1, active: true },
+      { id: "literary", uid: "literary", name: "الأدبي", icon: "📖", order: 2, active: true },
+      { id: "industrial", uid: "industrial", name: "الصناعي", icon: "⚙️", order: 3, active: true }
+    ];
   }
+  branches = Object.fromEntries(branchRecords.map(b => [b.uid || b.id, b.name || b.uid || b.id]));
+  categories = categorySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  categories.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name||"").localeCompare(String(b.name||""), "ar"));
+}
 
-  const template = {
-    version: 2,
-    refs,
-    presets,
-    resources: [
-      {
-        title:"اسم المصدر",
-        url:"https://example.com/file.pdf",
-        preset: Object.keys(presets)[0] ? `$${Object.keys(presets)[0]}` : undefined,
-        branch: Object.keys(presets).length ? undefined : undefined,
-        subject: subjectIds[0] ? aliases.subjects[subjectIds[0]] : undefined,
-        category: categoryIds[0] ? aliases.categories[categoryIds[0]] : undefined,
-        type:"كتاب",
-        description:"",
-        keywords:[]
-      }
-    ]
-  };
-  const clean = JSON.parse(JSON.stringify(template));
-  if (!clean.presets || !Object.keys(clean.presets).length) delete clean.presets;
-  if (!all && Object.keys(clean.presets||{}).length) {
-    delete clean.resources[0].subject;
-    delete clean.resources[0].category;
+function branchOptions(selected = [], activeOnly = false) {
+  const set = new Set(arr(selected));
+  return branchRecords.filter(b => !activeOnly || b.active !== false).map(b => {
+    const uid = b.uid || b.id;
+    return `<option value="${esc(uid)}" ${set.has(uid) ? "selected" : ""}>${esc(b.name || uid)} — ${esc(uid)}</option>`;
+  }).join("");
+}
+
+function categoryOptions(selected = "") {
+  let html = `<option value="">بدون تصنيف</option>`;
+  html += categories.map(c => {
+    const id = c.uid || c.id;
+    return `<option value="${esc(id)}" ${String(selected)===String(id) ? "selected" : ""}>${esc(c.name || id)}</option>`;
+  }).join("");
+  if (selected && !categories.some(c => String(c.uid || c.id) === String(selected))) {
+    html += `<option value="${esc(selected)}" selected>${esc(selected)} (قديم)</option>`;
   }
-  if (all) {
-    clean.resources = [];
-    clean._instructions = "استخدم المفاتيح الموجودة في refs داخل الموارد بصيغة $key. لا تغيّر قيم UIDs داخل refs. يمكنك إنشاء presets إذا كانت هناك تركيبات متكررة.";
-  }
-  return {clean, count:Object.keys(refs).length, presetCount:Object.keys(presets).length};
+  return html;
 }
 
-function generateImportTemplate() {
-  const {clean,count,presetCount}=buildTemplate({all:false});
-  $("#generatedImportTemplate").value=JSON.stringify(clean,null,2);
-  msg($("#templateMsg"), `تم توليد ${count} مرجع${presetCount ? ` و${presetCount} تركيبة جاهزة (presets)` : ""}.`, false);
+function populateDynamicSelectors() {
+  const subjectBranches = $("#subjectBranches");
+  if (subjectBranches) subjectBranches.innerHTML = branchOptions([], true);
+  const resourceBranch = $("#resourceBranch");
+  if (resourceBranch) resourceBranch.innerHTML = `<option value="">الفرع</option>` + branchOptions([], true);
+  const foundationBranch = $("#foundationBranch");
+  if (foundationBranch) foundationBranch.innerHTML = `<option value="">الفرع</option>` + branchOptions([], true);
+  const resourceCategory = $("#resourceCategory");
+  if (resourceCategory) resourceCategory.innerHTML = categoryOptions();
+  const subjectCategory = $("#subjectCategory");
+  if (subjectCategory) subjectCategory.innerHTML = categoryOptions();
+  const tb = $("#templateBranches"); if (tb) tb.innerHTML = branchOptions([], false);
+  const ts = $("#templateSubjects"); if (ts) ts.innerHTML = subjects.map(x => `<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.uid || x.id)}</option>`).join("");
+  const tc = $("#templateCategories"); if (tc) tc.innerHTML = categories.map(x => `<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.uid || x.id)}</option>`).join("");
 }
 
-function generateGeneralImportTemplate() {
-  const {clean,count}=buildTemplate({all:true});
-  $("#generatedImportTemplate").value=JSON.stringify(clean,null,2);
-  msg($("#templateMsg"), `تم توليد القالب العام: ${count} UID للفروع والمواد والتصنيفات.`, false);
-}
+function branchesHTML(ids = []) {
 
-function resolvePresetItem(item, refs, presets) {
-  if (!item || typeof item !== "object") return item;
-  const copy = { ...item };
-  if (copy.preset && String(copy.preset).startsWith("$") && presets) {
-    const key=String(copy.preset).slice(1);
-    const preset=presets[key];
-    if (preset) {
-      Object.assign(copy, preset, { preset: copy.preset });
-    }
-  }
-  return copy;
-}
-
-function resolveRefValue(value, refs) {
-  const v = String(value ?? "").trim();
-  if (!v || !refs || typeof refs !== "object") return v;
-  if (v.startsWith("$") && Object.prototype.hasOwnProperty.call(refs, v.slice(1))) return refs[v.slice(1)];
-  return v;
+  return arr(ids)
+    .map(
+      (id) =>
+        branches[id] || id
+    )
+    .join("، ") ||
+    "غير محدد";
 }
 
 
@@ -418,23 +299,6 @@ async function all(collectionName) {
 }
 
 
-async function ensureStableIds(records, collectionName, prefix) {
-  if (role !== "superadmin") return records;
-  const out = [];
-  for (const item of records) {
-    if (item.stableId) { out.push(item); continue; }
-    const stableId = newStableUid(prefix);
-    try {
-      await updateDoc(doc(db, collectionName, item.id), { stableId, updatedAt: serverTimestamp() });
-      out.push({ ...item, stableId });
-    } catch (error) {
-      console.warn(`Could not assign stableId to ${collectionName}/${item.id}`, error);
-      out.push(item);
-    }
-  }
-  return out;
-}
-
 /* =========================================================
    REFRESH DATA
 ========================================================= */
@@ -443,21 +307,17 @@ async function refresh() {
 
   try {
 
+    await loadBranchesAndCategories();
+
     const [
-      branchesResult,
       subjectsResult,
-      categoriesResult,
       resourcesResult,
       foundationsResult,
       suggestionsResult
     ] =
       await Promise.all([
 
-        all("branches"),
-
         all("subjects"),
-
-        all("categories"),
 
         all("resources"),
 
@@ -481,15 +341,8 @@ async function refresh() {
       ]);
 
 
-    branchRecords = branchesResult;
-    subjects = subjectsResult;
-    categories = categoriesResult;
-
-    if (role === "superadmin") {
-      branchRecords = await ensureStableIds(branchRecords, "branches", "BR");
-      subjects = await ensureStableIds(subjects, "subjects", "SUB");
-      categories = await ensureStableIds(categories, "categories", "CAT");
-    }
+    subjects =
+      subjectsResult;
 
     resources =
       resourcesResult;
@@ -522,7 +375,7 @@ async function refresh() {
 
 
     updateCounters();
-
+    populateDynamicSelectors();
     renderAll();
 
   } catch (error) {
@@ -587,7 +440,6 @@ function updateCounters() {
 function subjectOptions(
   branch = ""
 ) {
-  branch = resolveBranch(branch);
 
   return subjects
 
@@ -597,9 +449,9 @@ function subjectOptions(
         return true;
       }
 
-      return arr(
-        subject.branchIds
-      ).includes(branch);
+      const ids = arr(subject.branchIds);
+      const uid = branchRecords.find(b => b.id === branch || b.uid === branch)?.uid || branch;
+      return ids.includes(branch) || ids.includes(uid);
 
     })
 
@@ -620,31 +472,6 @@ function subjectOptions(
     .join("");
 }
 
-
-function branchOptions(selected = "") {
-  const items = [...branchRecords].sort((a,b)=>(a.order??9999)-(b.order??9999));
-  return items.map((b) => `<option value="${esc(b.id)}" ${b.id === selected ? "selected" : ""}>${esc(b.name)}</option>`).join("");
-}
-
-function categoryOptions(selected = "") {
-  const items = [...categories].sort((a,b)=>(a.order??9999)-(b.order??9999));
-  return items.map((c) => `<option value="${esc(c.id)}" ${c.id === selected ? "selected" : ""}>${esc(c.name)}</option>`).join("");
-}
-
-function refreshDynamicSelects() {
-  if ($("#resourceBranch")) {
-    const current = $("#resourceBranch").value;
-    $("#resourceBranch").innerHTML = '<option value="">اختر الفرع</option>' + branchOptions(current);
-  }
-  if ($("#foundationBranch")) {
-    const current = $("#foundationBranch").value;
-    $("#foundationBranch").innerHTML = '<option value="">اختر الفرع</option>' + branchOptions(current);
-  }
-  if ($("#resourceCategory")) {
-    const current = $("#resourceCategory").value;
-    $("#resourceCategory").innerHTML = '<option value="">اختر التصنيف</option>' + categoryOptions(current);
-  }
-}
 
 /* =========================================================
    DOCUMENT ID
@@ -687,28 +514,19 @@ function documentIdHTML(id) {
 
 function renderAll() {
 
+
+  /* =======================================================
+     BRANCHES
+  ======================================================= */
   if ($("#branchesList")) {
-    $("#branchesList").innerHTML = [...branchRecords].sort((a,b)=>(a.order??9999)-(b.order??9999)).map((b) => `
+    $("#branchesList").innerHTML = branchRecords.map(b => `
       <div class="admin-item">
-        <div>
-          <strong>🌿 ${esc(b.name)}</strong>
-          <p>UID: <code>${esc(b.id)}</code> · ترتيب ${b.order ?? "-"}</p>
-          ${b.description ? `<p>${esc(b.description)}</p>` : ""}
-        </div>
-        <div>
-          <button class="btn small" data-edit-branch="${esc(b.id)}">تعديل</button>
-          <button class="btn danger small" data-del-branch="${esc(b.id)}">حذف</button>
-        </div>
+        <div><strong>${esc(b.icon || "🌿")} ${esc(b.name || b.uid || b.id)}</strong>
+        <p>UID: <code>${esc(b.uid || b.id)}</code> · ${b.active === false ? "مخفي" : "ظاهر"} · ترتيب ${b.order ?? "-"}</p>
+        ${documentIdHTML(b.id)}</div>
+        <div><button class="btn small" data-edit-branch="${esc(b.id)}">تعديل</button><button class="btn danger small" data-del-branch="${esc(b.id)}">حذف</button></div>
       </div>`).join("") || '<div class="empty">لا توجد فروع.</div>';
   }
-
-  if ($("#categoriesList")) {
-    $("#categoriesList").innerHTML = [...categories].sort((a,b)=>(a.order??9999)-(b.order??9999)).map((c) => `
-      <div class="admin-item"><div><strong>🗂️ ${esc(c.name)}</strong><p>UID: <code>${esc(c.id)}</code></p></div></div>`).join("") || '<div class="empty">لا توجد تصنيفات.</div>';
-  }
-
-  refreshDynamicSelects();
-  populateTemplateGenerator();
 
   /* =======================================================
      SUBJECTS
@@ -738,10 +556,8 @@ function renderAll() {
                 </strong>
 
                 <p>
-                  ${branchesHTML(
-                    subject.branchIds
-                  )}
-
+                  ${branchesHTML(subject.branchIds)}
+                  · ${esc(subject.category || subject.categoryId || "بدون تصنيف")}
                   · ترتيب
                   ${subject.order ?? "-"}
 
@@ -816,7 +632,9 @@ function renderAll() {
                 <p>
 
                   ${
-                    branchName(resource.branchId) ||
+                    branches[
+                      resource.branchId
+                    ] ||
                     branchesHTML(
                       resource.branchIds
                     )
@@ -1388,37 +1206,6 @@ document.addEventListener(
 
 
     /* =====================================================
-       DELETE BRANCH
-    ===================================================== */
-    if (target.dataset.delBranch) {
-      if (!can("superadmin")) return alert("ليس لديك صلاحية.");
-      const id = target.dataset.delBranch;
-      const usedSubjects = subjects.filter(s => arr(s.branchIds).map(resolveBranch).includes(id)).length;
-      const usedResources = resources.filter(r => arr(r.branchIds || r.branchId).map(resolveBranch).includes(id)).length;
-      if (usedSubjects || usedResources) {
-        return alert(`لا يمكن حذف الفرع الآن.\n\nمرتبط بـ ${usedSubjects} مادة و ${usedResources} مصدر.\nأزل الارتباطات أولًا.`);
-      }
-      if (!confirm("هل تريد حذف الفرع؟\nهذا الإجراء لا يمكن التراجع عنه.")) return;
-      try { await deleteDoc(doc(db, "branches", id)); await refresh(); } catch (error) { alert("فشل حذف الفرع:\n" + errorMessage(error)); }
-      return;
-    }
-
-    /* =====================================================
-       EDIT BRANCH
-    ===================================================== */
-    if (target.dataset.editBranch) {
-      const b = branchRecords.find(x => x.id === target.dataset.editBranch);
-      if (!b || !can("superadmin")) return;
-      editing = b.id;
-      $("#branchName").value = b.name || "";
-      $("#branchDescription").value = b.description || "";
-      $("#branchOrder").value = b.order ?? "";
-      $("#branchForm").classList.remove("hidden");
-      openTab("branches");
-      return;
-    }
-
-    /* =====================================================
        DELETE SUBJECT
     ===================================================== */
 
@@ -1800,6 +1587,35 @@ document.addEventListener(
 
 
     /* =====================================================
+       BRANCH CRUD
+    ===================================================== */
+    if (target.id === "addBranchBtn") {
+      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
+      editingBranch = null;
+      $("#branchForm")?.reset();
+      $("#branchActive").checked = true;
+      $("#branchForm")?.classList.remove("hidden");
+      openTab("branches");
+      return;
+    }
+    if (target.id === "cancelBranch") { $("#branchForm")?.classList.add("hidden"); editingBranch=null; return; }
+    if (target.dataset.editBranch) {
+      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
+      const b=branchRecords.find(x=>x.id===target.dataset.editBranch); if(!b)return;
+      editingBranch=b.id; $("#branchName").value=b.name||""; $("#branchIcon").value=b.icon||""; $("#branchOrder").value=b.order??""; $("#branchDescription").value=b.description||""; $("#branchActive").checked=b.active!==false; $("#branchForm")?.classList.remove("hidden"); openTab("branches"); return;
+    }
+    if (target.dataset.delBranch) {
+      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
+      const b=branchRecords.find(x=>x.id===target.dataset.delBranch); if(!b)return;
+      const uid=b.uid||b.id; const used=subjects.some(s=>arr(s.branchIds).includes(uid)) || resources.some(r=>arr(r.branchIds||r.branchId).includes(uid)) || foundations.some(f=>arr(f.branchIds||f.branchId).includes(uid));
+      if(used) return alert("لا يمكن حذف الفرع لأنه مرتبط بمواد أو مصادر أو تأسيس. أخفِه بدل الحذف.");
+      if(!confirm(`حذف الفرع «${b.name}»؟`)) return;
+      try { await deleteDoc(doc(db,"branches",b.id)); await refresh(); } catch(e){ alert("فشل حذف الفرع:
+"+errorMessage(e)); }
+      return;
+    }
+
+    /* =====================================================
        ADD SUBJECT
     ===================================================== */
 
@@ -2121,17 +1937,9 @@ function editSubject(id) {
     subject.description || "";
 
 
-  $$("#subjectForm input[type=checkbox]")
-    .forEach((checkbox) => {
-
-      checkbox.checked =
-        arr(
-          subject.branchIds
-        ).includes(
-          checkbox.value
-        );
-
-    });
+  $("#subjectBranches").innerHTML = branchOptions(subject.branchIds || [], true);
+  $("#subjectCategory").innerHTML = categoryOptions(subject.categoryId || subject.category || "");
+  $("#subjectCategory").value = subject.categoryId || subject.category || "";
 
 
   $("#subjectForm")
@@ -2215,11 +2023,8 @@ function editResource(id) {
     resource.type || "";
 
 
-  $("#resourceCategory")
-    .value =
-    resource.categoryId ||
-    resolveCategory(resource.category) ||
-    "";
+  $("#resourceCategory").innerHTML = categoryOptions(resource.categoryId || resource.category || "");
+  $("#resourceCategory").value = resource.categoryId || resource.category || "";
 
 
   $("#resourceKeywords")
@@ -2515,11 +2320,6 @@ if ($("#logoutBtn")) {
 }
 
 
-if ($("#addBranchBtn")) $("#addBranchBtn").onclick = () => { editing = null; $("#branchForm").reset(); $("#branchForm").classList.remove("hidden"); };
-if ($("#cancelBranch")) $("#cancelBranch").onclick = () => { $("#branchForm").classList.add("hidden"); editing = null; };
-if ($("#addCategoryBtn")) $("#addCategoryBtn").onclick = () => { $("#categoryForm").reset(); $("#categoryForm").classList.remove("hidden"); };
-if ($("#cancelCategory")) $("#cancelCategory").onclick = () => $("#categoryForm").classList.add("hidden");
-
 /* =========================================================
    BRANCH -> SUBJECT
 ========================================================= */
@@ -2595,12 +2395,9 @@ if ($("#subjectForm")) {
             .value
             .trim(),
 
-        branchIds:
-          $$("#subjectForm input[type=checkbox]:checked")
-            .map(
-              (checkbox) =>
-                checkbox.value
-            ),
+        branchIds: [...($("#subjectBranches")?.selectedOptions || [])].map(o => o.value),
+        categoryId: $("#subjectCategory")?.value || "",
+        category: categories.find(c => String(c.uid || c.id) === String($("#subjectCategory")?.value || ""))?.name || "",
 
         description:
           $("#subjectDescription")
@@ -2665,7 +2462,7 @@ if ($("#subjectForm")) {
             ),
             {
               ...data,
-              stableId: newStableUid("SUB"),
+              uid: stableUID("SUB"),
               createdAt:
                 serverTimestamp()
             }
@@ -2704,48 +2501,6 @@ if ($("#subjectForm")) {
     };
 }
 
-
-/* =========================================================
-   BRANCH FORM
-========================================================= */
-if ($("#branchForm")) {
-  $("#branchForm").onsubmit = async (event) => {
-    event.preventDefault();
-    if (!can("superadmin")) return msg($("#branchMsg"), "ليس لديك صلاحية.", true);
-    const name = $("#branchName").value.trim();
-    if (!name) return msg($("#branchMsg"), "أدخل اسم الفرع.", true);
-    const data = { name, description: $("#branchDescription").value.trim(), order: Number($("#branchOrder").value) || 9999, updatedAt: serverTimestamp() };
-    if (!editing) data.stableId = newStableUid("BR");
-    try {
-      if (editing) {
-        await updateDoc(doc(db, "branches", editing), data);
-      } else {
-        const ref = await addDoc(collection(db, "branches"), { ...data, createdAt: serverTimestamp() });
-        $("#branchMsg").textContent = `تم إنشاء الفرع. UID: ${data.stableId}`;
-      }
-      editing = null;
-      $("#branchForm").classList.add("hidden");
-      await refresh();
-    } catch (error) { msg($("#branchMsg"), "فشل حفظ الفرع:\n" + errorMessage(error), true); }
-  };
-}
-
-/* =========================================================
-   CATEGORY FORM
-========================================================= */
-if ($("#categoryForm")) {
-  $("#categoryForm").onsubmit = async (event) => {
-    event.preventDefault();
-    if (!can("superadmin")) return msg($("#categoryMsg"), "ليس لديك صلاحية.", true);
-    const name = $("#categoryName").value.trim();
-    if (!name) return msg($("#categoryMsg"), "أدخل اسم التصنيف.", true);
-    try {
-      await addDoc(collection(db, "categories"), { name, stableId: newStableUid("CAT"), order: Number($("#categoryOrder").value) || 9999, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-      $("#categoryForm").classList.add("hidden");
-      await refresh();
-    } catch (error) { msg($("#categoryMsg"), "فشل حفظ التصنيف:\n" + errorMessage(error), true); }
-  };
-}
 
 /* =========================================================
    RESOURCE FORM
@@ -2833,11 +2588,13 @@ if ($("#resourceForm")) {
 
 
       const branchId =
-        resolveBranch($("#resourceBranch").value);
+        $("#resourceBranch")
+          .value;
 
 
       const subjectId =
-        resolveSubject($("#resourceSubject").value);
+        $("#resourceSubject")
+          .value;
 
 
       if (!branchId) {
@@ -2884,10 +2641,8 @@ if ($("#resourceForm")) {
             .value
             .trim(),
 
-        category:
-          $("#resourceCategory")
-            .value
-            .trim(),
+        categoryId: $("#resourceCategory").value || "",
+        category: categories.find(c => String(c.uid || c.id) === String($("#resourceCategory").value || ""))?.name || $("#resourceCategory").value || "",
 
         keywords:
           $("#resourceKeywords")
@@ -2987,6 +2742,26 @@ if ($("#resourceForm")) {
     };
 }
 
+
+/* =========================================================
+   BRANCH FORM
+========================================================= */
+if ($("#branchForm")) {
+  $("#branchForm").onsubmit = async (event) => {
+    event.preventDefault();
+    if (role !== "superadmin") return msg($("#branchMsg"), "هذه العملية لـ Super Admin فقط.", true);
+    const name=$("#branchName").value.trim(); if(!name) return msg($("#branchMsg"),"أدخل اسم الفرع.",true);
+    const data={name, icon:$("#branchIcon").value.trim() || "🌿", order:Number($("#branchOrder").value)||9999, description:$("#branchDescription").value.trim(), active:$("#branchActive").checked, updatedAt:serverTimestamp()};
+    try {
+      if(editingBranch) {
+        const existing = branchRecords.find(x=>x.id===editingBranch);
+        await updateDoc(doc(db,"branches",editingBranch),{...data,uid:existing?.uid || stableUID("BR")});
+      } else await addDoc(collection(db,"branches"),{...data,uid:stableUID("BR"),createdAt:serverTimestamp()});
+      editingBranch=null; $("#branchForm").classList.add("hidden"); await refresh();
+    } catch(e){ msg($("#branchMsg"),"فشل حفظ الفرع:
+"+errorMessage(e),true); }
+  };
+}
 
 /* =========================================================
    FOUNDATION FORM
@@ -3255,34 +3030,25 @@ async function importItems(
   }
 
 
-  const parsed =
-    parseJSON(
-      textSelector,
-      messageSelector
-    );
-
-  let refs = {};
-  let presets = {};
-  let list = parsed;
-  if (parsed && !Array.isArray(parsed) && typeof parsed === "object") {
-    refs = parsed.refs || {};
-    presets = parsed.presets || {};
-    list = parsed[collectionName] || parsed.items || parsed.resources || parsed.foundations;
-  }
+  const parsed = parseJSON(textSelector, messageSelector);
+  if (!parsed) return;
+  const refs = parsed.refs || {};
+  const presets = parsed.presets || {};
+  let list = Array.isArray(parsed) ? parsed : (parsed.resources || parsed.foundations || parsed.items || []);
+  const resolveRef = (v) => { const x=String(v??"").trim(); return x.startsWith("$") && refs[x.slice(1)] ? refs[x.slice(1)] : x; };
+  const expand = (item) => { const p=item.preset && String(item.preset).startsWith("$") ? presets[String(item.preset).slice(1)] : null; const out={...(p||{}),...item}; ["branch","branchId","subject","subjectId","category","categoryId"].forEach(k=>{if(k in out)out[k]=resolveRef(out[k]);}); if(Array.isArray(out.branchIds))out.branchIds=out.branchIds.map(resolveRef); return out; };
+  list=list.map(expand);
 
   if (!Array.isArray(list)) {
-    return msg($(messageSelector), "يجب أن يكون JSON Array أو Object يحتوي على resources/foundations.", true);
+
+    return msg(
+      $(messageSelector),
+      "يجب أن يكون JSON عبارة عن Array.",
+      true
+    );
+
   }
 
-  list = list.map(item => {
-    if (!item || typeof item !== "object") return item;
-    let copy = resolvePresetItem(item, refs, presets);
-    ["branch","branchId","subject","subjectId","category","categoryId"].forEach(k => {
-      if (k in copy) copy[k] = resolveRefValue(copy[k], refs);
-    });
-    if (Array.isArray(copy.branchIds)) copy.branchIds = copy.branchIds.map(v => resolveRefValue(v, refs));
-    return copy;
-  });
 
   if (!list.length) {
 
@@ -3512,7 +3278,7 @@ ${errorMessage(error)}`,
     }
 
 
-    const subjectId = resolveSubject(item.subjectId ?? item.subject ?? "");
+    const subjectId = String(item.subjectId ?? item.subject ?? "").trim();
 
 
     if (!subjectId) {
@@ -3582,7 +3348,12 @@ ${errorMessage(error)}`,
 
       branchIds =
         item.branchIds
-          .map((branch) => resolveBranch(branch))
+          .map(
+            (branch) =>
+              String(
+                branch
+              ).trim()
+          )
           .filter(Boolean);
 
     }
@@ -3593,28 +3364,37 @@ ${errorMessage(error)}`,
       item.branchId
     ) {
 
-      branchIds = [resolveBranch(item.branchId || item.branch || "")].filter(Boolean);
+      branchIds = [
+        String(
+          item.branchId
+        ).trim()
+      ];
 
     }
 
 
-    let branchId = resolveBranch(item.branchId || item.branch || branchIds[0] || "");
+    const branchId =
+      String(
+        item.branchId ||
+        branchIds[0] ||
+        ""
+      ).trim();
 
 
-    if (type === "resource" && !branchId) {
-      const subject = subjects.find(s => s.id === subjectId);
-      branchIds = arr(subject?.branchIds).map(resolveBranch).filter(Boolean);
-      branchId = branchIds[0] || "";
-    }
+    if (
+      type === "resource" &&
+      !branchId
+    ) {
 
-    if (type === "resource" && !branchIds.length) {
       invalid++;
-      errors.push(`العنصر ${number}: اختر الفرع من خلال branch/branchId أو اجعل المادة مرتبطة بفروع.`);
+
+      errors.push(
+        `العنصر ${number}: لا يوجد branchId`
+      );
+
       continue;
     }
 
-
-    if (branchId && !branchIds.includes(branchId)) branchIds = [branchId, ...branchIds];
 
     if (
       type === "foundation" &&
@@ -3726,8 +3506,8 @@ ${errorMessage(error)}`,
           ""
         ).trim();
 
-      data.categoryId = resolveCategory(item.categoryId ?? item.category ?? "");
-      data.category = categoryName(data.categoryId);
+      data.categoryId = String(item.categoryId || item.category || "").trim();
+      data.category = categories.find(c=>String(c.uid||c.id)===data.categoryId)?.name || String(item.categoryName||item.category||"").trim();
 
     }
 
@@ -3937,26 +3717,31 @@ ${invalid}`,
 
 
 /* =========================================================
+   BULK TEMPLATE GENERATOR
+========================================================= */
+function refAlias(name, used){ let base=String(name||"ref").trim().toLowerCase().replace(/[^a-z0-9_\u0600-\u06ff]+/g,"_").replace(/^_+|_+$/g,"")||"ref"; let a=base,i=2; while(used.has(a))a=`${base}_${i++}`; used.add(a); return a; }
+function generateImportTemplate(general=false){
+  const selectedB=general?branchRecords.map(x=>x.uid||x.id):[...($("#templateBranches")?.selectedOptions||[])].map(o=>o.value);
+  const selectedS=general?subjects.map(x=>x.uid||x.id):[...($("#templateSubjects")?.selectedOptions||[])].map(o=>o.value);
+  const selectedC=general?categories.map(x=>x.uid||x.id):[...($("#templateCategories")?.selectedOptions||[])].map(o=>o.value);
+  const used=new Set(),refs={}, aliases={};
+  const add=(list,records,key,prefix)=>list.forEach(id=>{const x=records.find(r=>(r.uid||r.id)===id||r.id===id);if(!x)return;const a=refAlias(x.name,used);refs[a]=x.uid||x.id;aliases[key]=aliases[key]||{};aliases[key][id]=`$${a}`;});
+  add(selectedB,branchRecords,"branches","BR"); add(selectedS,subjects,"subjects","SUB"); add(selectedC,categories,"categories","CAT");
+  const presets={};
+  const b=selectedB[0],s=selectedS[0],c=selectedC[0];
+  if(b&&s&&c){ const bn=branchRecords.find(x=>(x.uid||x.id)===b)?.name||"branch"; const sn=subjects.find(x=>(x.uid||x.id)===s)?.name||"subject"; const cn=categories.find(x=>(x.uid||x.id)===c)?.name||"category"; presets[refAlias(`${bn}_${sn}_${cn}`,used)]={branch:aliases.branches[b],subject:aliases.subjects[s],category:aliases.categories[c]}; }
+  const out={refs,presets,resources:[]};
+  $("#generatedImportTemplate").value=JSON.stringify(out,null,2);
+  msg($("#templateMsg"),`تم إنشاء ${general?"القالب العام":"القالب المحدد"}: ${Object.keys(refs).length} مرجع.`,false);
+}
+
+if($("#generateImportTemplate")) $("#generateImportTemplate").onclick=()=>generateImportTemplate(false);
+if($("#generateGeneralImportTemplate")) $("#generateGeneralImportTemplate").onclick=()=>generateImportTemplate(true);
+if($("#copyImportTemplate")) $("#copyImportTemplate").onclick=async()=>{const text=$("#generatedImportTemplate")?.value||"";if(!text)return msg($("#templateMsg"),"أنشئ قالبًا أولًا.",true);try{await navigator.clipboard.writeText(text);msg($("#templateMsg"),"تم نسخ القالب.",false);}catch{alert("تعذر النسخ التلقائي.");}};
+
+/* =========================================================
    BULK BUTTONS
 ========================================================= */
-
-if (typeof document !== "undefined") {
-  document.addEventListener("click", async (event) => {
-    if (event.target.closest("#generateImportTemplate")) generateImportTemplate();
-    if (event.target.closest("#generateGeneralImportTemplate")) generateGeneralImportTemplate();
-    if (event.target.closest("#copyImportTemplate")) {
-      const el = $("#generatedImportTemplate");
-      if (!el?.value) return msg($("#templateMsg"), "ولّد القالب أولًا.", true);
-      try { await navigator.clipboard.writeText(el.value); msg($("#templateMsg"), "تم نسخ القالب.", false); }
-      catch { el.select(); document.execCommand("copy"); msg($("#templateMsg"), "تم نسخ القالب.", false); }
-    }
-  });
-}
-
-if (typeof window !== "undefined") {
-  window.generateImportTemplate = generateImportTemplate;
-  window.generateGeneralImportTemplate = generateGeneralImportTemplate;
-}
 
 if ($("#importResources")) {
 
