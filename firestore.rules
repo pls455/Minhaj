@@ -1,41 +1,240 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function adminDoc() { return get(/databases/$(database)/documents/admins/$(request.auth.uid)); }
-    function isAdmin() { return signedIn() && adminDoc().data.active == true; }
-    function role() { return adminDoc().data.role; }
-    function isSuper() { return isAdmin() && role() == 'superadmin'; }
-    function canContent() { return isAdmin() && (role() == 'superadmin' || role() == 'content_admin'); }
-    function canReview() { return isAdmin() && (role() == 'superadmin' || role() == 'content_admin' || role() == 'reviewer'); }
 
-    match /subjects/{id} {
-      allow read: if true;
-      allow create, update, delete: if canContent();
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
+    function signedIn() {
+      return request.auth != null;
     }
-    match /resources/{id} {
-      allow read: if true;
-      allow create, update, delete: if canContent();
+
+
+    /* =====================================================
+       ADMIN HELPERS
+    ===================================================== */
+
+    function isAdmin() {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        ).data.active != false;
     }
-    match /foundations/{id} {
-      allow read: if true;
-      allow create, update, delete: if canContent();
+
+
+    function adminRole() {
+      return isAdmin()
+        ? get(
+            /databases/$(database)/documents/admins/$(request.auth.uid)
+          ).data.role
+        : "";
     }
-    match /suggestions/{id} {
-      allow create: if request.resource.data.status == 'pending'
-        && request.resource.data.url is string
-        && request.resource.data.title is string;
-      allow read: if canReview();
-      allow update: if canReview();
-      allow delete: if isSuper();
+
+
+    function isReviewer() {
+      return isAdmin()
+        && (
+          adminRole() == "reviewer" ||
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin"
+        );
     }
+
+
+    function isContentAdmin() {
+      return isAdmin()
+        && (
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin"
+        );
+    }
+
+
+    function isSuperAdmin() {
+      return isAdmin()
+        && (adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+    }
+
+
+    /* =====================================================
+       ADMINS
+    ===================================================== */
+
     match /admins/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid || isSuper();
-      allow create, update, delete: if isSuper();
+
+      /*
+       * المستخدم يستطيع قراءة وثيقة صلاحياته فقط.
+       *
+       * Super Admin يستطيع قراءة جميع الأدمنز.
+       *
+       * هذا مهم جدًا لأن isAdmin() لا يجب أن يكون
+       * شرطًا دائريًا عند قراءة وثيقة المستخدم نفسه.
+       */
+      allow get: if signedIn()
+                 && (
+                   request.auth.uid == uid ||
+                   isSuperAdmin()
+                 );
+
+      /*
+       * Super Admin يحتاج قراءة قائمة الأدمنز كاملة.
+       */
+      allow list: if isSuperAdmin();
+
+
+      /*
+       * إنشاء أدمن:
+       * Super Admin فقط.
+       */
+      allow create: if isSuperAdmin();
+
+
+      /*
+       * تعديل الأدمنز:
+       * Super Admin فقط.
+       */
+      allow update: if isSuperAdmin();
+
+
+      /*
+       * لا نحذف الأدمنز.
+       * نستخدم active: false بدل الحذف.
+       */
+      allow delete: if false;
     }
-    match /categories/{id} {
+
+
+    /* =====================================================
+       BRANCHES
+    ===================================================== */
+    match /branches/{branchId} {
       allow read: if true;
-      allow create, update, delete: if canContent();
+      allow create: if isSuperAdmin()
+        && request.resource.data.uid is string;
+      allow update: if isSuperAdmin()
+        && resource.data.uid is string
+        && request.resource.data.uid == resource.data.uid;
+      allow delete: if isSuperAdmin();
+    }
+
+
+    /* =====================================================
+       CATEGORIES
+    ===================================================== */
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+
+    /* =====================================================
+       SUBJECTS
+    ===================================================== */
+
+    match /subjects/{subjectId} {
+
+      /*
+       * الموقع يحتاج قراءة المواد.
+       */
+      allow read: if true;
+
+
+      /*
+       * Content Admin أو Super Admin.
+       */
+      allow create: if isContentAdmin() && request.resource.data.uid is string;
+      allow update: if isContentAdmin()
+        && (!resource.data.keys().hasAny(["uid"]) || request.resource.data.uid == resource.data.uid);
+      allow delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       RESOURCES
+    ===================================================== */
+
+    match /resources/{resourceId} {
+
+      /*
+       * الطلاب يستطيعون قراءة المصادر.
+       */
+      allow read: if true;
+
+
+      /*
+       * Content Admin أو Super Admin.
+       */
+      allow create, update, delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       FOUNDATIONS
+    ===================================================== */
+
+    match /foundations/{foundationId} {
+
+      /*
+       * التأسيس متاح للجميع للقراءة.
+       */
+      allow read: if true;
+
+
+      /*
+       * Content Admin أو Super Admin.
+       */
+      allow create, update, delete: if isContentAdmin();
+    }
+
+
+    /* =====================================================
+       SUGGESTIONS
+    ===================================================== */
+
+    match /suggestions/{suggestionId} {
+
+      /*
+       * الطلاب يستطيعون إنشاء اقتراح.
+       */
+      allow create: if true;
+
+
+      /*
+       * Reviewer وما فوق.
+       */
+      allow read: if isReviewer();
+
+
+      /*
+       * Reviewer وما فوق يستطيع مراجعة الاقتراح.
+       */
+      allow update: if isReviewer();
+
+
+      /*
+       * لا نحذف الاقتراحات.
+       */
+      allow delete: if false;
+    }
+
+
+    /* =====================================================
+       DEFAULT DENY
+    ===================================================== */
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
