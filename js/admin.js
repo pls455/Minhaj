@@ -68,7 +68,7 @@ function optionHTML(items,valueField="id",labelField="name",selected=""){ return
 function checks(container,items,selected=[]){ if(!container)return; container.innerHTML=items.filter(x=>x.active!==false).slice().sort((a,b)=>(a.order??9999)-(b.order??9999)).map(x=>`<label><input type="checkbox" value="${esc(x.id)}" ${selected.includes(x.id)?"checked":""}> ${esc(x.name)}</label>`).join(""); }
 function checked(container){ return $$('input[type="checkbox"]:checked',container).map(x=>x.value); }
 function documentId(id,stable){ return `<p class="admin-doc-id"><strong>Document ID:</strong> <code>${esc(id)}</code>${stable?` · <strong>Stable ID:</strong> <code>${esc(stable)}</code>`:""}<button type="button" class="btn small" data-copy-id="${esc(id)}">📋 نسخ ID</button></p>`; }
-function openTab(name){ $$(".admin-tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===name)); $$(".admin-panel").forEach(x=>x.classList.add("hidden")); $("#"+name+"Panel")?.classList.remove("hidden"); }
+function openTab(name){ $$(".admin-tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===name)); $$(".admin-panel").forEach(x=>x.classList.add("hidden")); $("#"+name+"Panel")?.classList.remove("hidden"); if(name==="templates")renderTemplatePreview(); }
 function render(){
   $("#branchesCount").textContent=cache("branches").length; $("#subjectsCount").textContent=cache("subjects").length; $("#resourcesCount").textContent=cache("resources").length; $("#categoriesCount").textContent=cache("categories").length; $("#suggestionsCount").textContent=cache("suggestions").length; $("#logsCount").textContent=cache("logs").length;
   $$(".super-only").forEach(x=>x.classList.toggle("hidden",role!=="superadmin"));
@@ -85,20 +85,35 @@ function renderSuggestions(){ $("#suggestionsList").innerHTML=data.suggestions.m
 function renderLogs(){ if(role!=="superadmin"){$("#logsList").innerHTML="";return;} $("#logsList").innerHTML=data.logs.map(l=>`<div class="admin-item"><div><strong>${esc(l.action)} · ${esc(l.collection||"")}</strong><p>${esc(l.details||"")} · ${esc(l.adminEmail||l.adminUid||"أدمن")} · ${l.createdAt?.seconds?new Date(l.createdAt.seconds*1000).toLocaleString("ar-PS"):"الآن"}</p></div><code>${esc(l.targetId||"")}</code></div>`).join("")||'<div class="empty">لا يوجد سجل بعد.</div>'; }
 function renderAdmins(){ if(role!=="superadmin"){$("#adminsList").innerHTML="";return;} $("#adminsList").innerHTML=data.admins.map(a=>`<div class="admin-item"><div><strong>${esc(a.email||a.id)}</strong><p>${esc(a.role||"reviewer")} · ${a.active!==false?"نشط":"موقوف"} · UID: ${esc(a.id)}</p></div><button class="btn small" data-edit-admin="${esc(a.id)}">تعديل</button></div>`).join("")||'<div class="empty">لا يوجد أدمن.</div>'; }
 
+function systemReference(){
+  return {
+    branches:data.branches.map(x=>({branchId:x.stableId||x.id,name:x.name,active:x.active!==false})),
+    subjects:data.subjects.map(x=>({subjectId:x.stableId||x.id,name:x.name,branchIds:branchesOfSubject(x).map(id=>data.branches.find(b=>b.id===id)?.stableId||id),active:x.active!==false})),
+    categories:data.categories.map(x=>({categoryId:x.stableId||x.id,name:x.name,active:x.active!==false}))
+  };
+}
 function buildGeneralTemplate(){
   return {
-    templateType:"minhaj-general-v2",
-    description:"مرجع كامل ترسله إلى GPT. يحتوي المعرفات الحالية للفروع والمواد والتصنيفات حتى يستطيع GPT مطابقة المحتوى تلقائيًا مع النظام.",
-    system:{
-      branches:data.branches.map(x=>({branchId:x.stableId||x.id,name:x.name,active:x.active!==false})),
-      subjects:data.subjects.map(x=>({subjectId:x.stableId||x.id,name:x.name,branchIds:branchesOfSubject(x).map(id=>data.branches.find(b=>b.id===id)?.stableId||id),active:x.active!==false})),
-      categories:data.categories.map(x=>({categoryId:x.stableId||x.id,name:x.name,active:x.active!==false}))
-    },
+    templateType:"minhaj-general-v3",
+    title:"قالب منهاج العام لإضافة المحتوى",
+    purpose:"انسخ هذا القالب كاملًا إلى GPT، ثم أرسل بعده معلومات المحتوى أو الروابط. يجب على GPT إرجاع JSON فقط وفق schema المحدد.",
+    systemReference:systemReference(),
+    input:{content:"ضع هنا النص أو الروابط أو البيانات التي تريد استخراج المحتوى منها"},
     output:{
-      resources:[{title:"",url:"",description:"",type:"",keywords:[],author:"",branchIds:[],subjectId:"",categoryId:"",order:9999}],
-      foundations:[{title:"",url:"",description:"",level:"beginner",type:"lesson",keywords:[],author:"",branchIds:[],subjectId:"",order:9999}]
+      resources:[{title:"",url:"",description:"",type:"",keywords:[],author:"",branchIds:[],subjectId:"",categoryId:"",order:9999,active:true}],
+      foundations:[{title:"",url:"",description:"",level:"beginner",type:"lesson",keywords:[],author:"",branchIds:[],subjectId:"",order:9999,active:true}]
     },
-    rules:["استخدم فقط branchId وsubjectId وcategoryId الموجودة في system","طابق الاسم مع المعرف المناسب ولا تخترع معرفًا","العنوان والرابط مطلوبان","أعد JSON صالحًا فقط","لا تضف بيانات غير موجودة أو روابط مختلقة"]
+    rules:[
+      "أعد JSON صالحًا فقط ولا تضع Markdown أو شرحًا خارج JSON.",
+      "استخدم IDs الموجودة في systemReference فقط، ولا تخترع أي ID.",
+      "طابق أسماء الفرع والمادة والتصنيف مع systemReference ثم استخدم الـ ID المطابق.",
+      "إذا تعذر تحديد المادة أو الفرع أو التصنيف فلا تخمّن، ضع القيمة فارغة وأضف المشكلة في validationErrors.",
+      "العنوان والرابط مطلوبان للمصادر والتأسيس.",
+      "لا تخترع روابط أو معلومات غير موجودة في المدخل.",
+      "branchIds يجب أن تحتوي IDs الفروع فقط، وsubjectId يجب أن يكون ID مادة، وcategoryId يجب أن يكون ID تصنيف.",
+      "أضف validationErrors كـ array إذا كانت هناك بيانات ناقصة أو غير مؤكدة."
+    ],
+    responseSchema:{resources:"array",foundations:"array",validationErrors:"array"}
   };
 }
 const FIELD_DEFS = {
@@ -109,13 +124,36 @@ function buildCustomTemplate(){
   const collectionName=$("#customTemplateCollection")?.value||"resources";
   const fields=selectedTemplateFields();
   const item={}; fields.forEach(k=>item[k]=FIELD_DEFS[k]?.value ?? "");
-  return {templateType:"minhaj-custom-v1",name:$("#customTemplateName")?.value.trim()||"قالب مخصص",target:collectionName,description:$("#customTemplateDescription")?.value.trim()||"",includeIds:false,fields,items:[item],instructions:["لا تضع معرفات Firebase داخل القالب","استخدم أسماء المواد والفروع والتصنيفات عند الحاجة في بيانات الإدخال، وسيقوم النظام بالمطابقة في مرحلة الاستيراد"]};
+  const context={branchName:"",subjectName:"",categoryName:""};
+  return {
+    templateType:"minhaj-custom-v2",
+    name:$("#customTemplateName")?.value.trim()||"قالب مخصص",
+    target:collectionName,
+    description:$("#customTemplateDescription")?.value.trim()||"",
+    input:{content:"ضع هنا المحتوى المراد تحويله"},
+    context,
+    fields,
+    itemTemplate:item,
+    output:{items:[item],validationErrors:[]},
+    instructions:[
+      "أعد JSON صالحًا فقط.",
+      "لا تخترع روابط أو معلومات غير موجودة.",
+      "استخدم أسماء الفرع والمادة والتصنيف عند توفرها، ولا تخترع IDs.",
+      "إذا كانت معلومة أساسية ناقصة ضعها في validationErrors بدل التخمين."
+    ]
+  };
 }
 function renderTemplatePreview(){
+  const el=$("#templatePreview"); if(!el)return;
   const mode=$("#templateMode")?.value||"general";
-  let out;
-  if(mode==="general") out=buildGeneralTemplate(); else out=buildCustomTemplate();
-  $("#templatePreview").value=JSON.stringify(out,null,2);
+  const out=mode==="general"?buildGeneralTemplate():buildCustomTemplate();
+  el.value=JSON.stringify(out,null,2);
+  el.scrollTop=0;
+}
+async function copyTextReliable(text){
+  if(!text)return false;
+  try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}}catch{}
+  try{const ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";ta.style.pointerEvents="none";document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);const ok=document.execCommand("copy");ta.remove();return ok;}catch{return false;}
 }
 function renderTemplates(){
   const list=$("#savedTemplatesList"); if(!list)return;
@@ -163,7 +201,7 @@ $("#importResources").onclick=()=>importItems("#bulkResources","resources","#bul
 
 $("#templateMode")?.addEventListener("change",()=>{const custom=$("#templateMode").value==="custom";$("#customTemplateEditor")?.classList.toggle("hidden",!custom);renderTemplatePreview();});
 $("#customTemplateFields")?.addEventListener("change",renderTemplatePreview);["customTemplateName","customTemplateCollection","customTemplateDescription"].forEach(id=>$("#"+id)?.addEventListener("input",renderTemplatePreview));
-$("#copyTemplateBtn")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText($("#templatePreview").value);msg($("#templateMsg"),"تم نسخ القالب.");}catch(e){msg($("#templateMsg"),"تعذر النسخ تلقائيًا. انسخه يدويًا.",true);}});
+$("#copyTemplateBtn")?.addEventListener("click",async()=>{renderTemplatePreview();const ok=await copyTextReliable($("#templatePreview").value);msg($("#templateMsg"),ok?"تم نسخ القالب كاملًا إلى الحافظة.":"تعذر النسخ التلقائي. تم تجهيز القالب، استخدم زر النسخ من لوحة المفاتيح.",!ok);if(!ok){$("#templatePreview")?.focus();$("#templatePreview")?.select();}});
 $("#resetGeneralTemplate")?.addEventListener("click",()=>{$("#templateMode").value="general";$("#customTemplateEditor")?.classList.add("hidden");renderTemplatePreview();});
 $("#saveCustomTemplate")?.addEventListener("click",async()=>{if(!can("content_admin"))return msg($("#templateMsg"),"ليس لديك صلاحية إدارة القوالب.",true);const x=buildCustomTemplate();if(!x.name)return msg($("#templateMsg"),"اكتب اسم القالب.",true);if(!x.fields.length)return msg($("#templateMsg"),"اختر حقلًا واحدًا على الأقل.",true);try{const ref=await addDoc(collection(db,"templates"),{...x,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:auth.currentUser?.uid||""});await nowLog("إضافة قالب","templates",ref.id,x.name);msg($("#templateMsg"),"تم حفظ القالب المخصص.");await loadAll();}catch(e){msg($("#templateMsg"),errorText(e),true);}});
 
