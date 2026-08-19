@@ -190,14 +190,31 @@ function normalizeImportURL(value) {
 ========================================================= */
 
 async function loadRole(user) {
-  if (!user?.uid) throw new Error("NO_USER");
-  const snap = await getDoc(doc(db, "admins", user.uid));
-  if (!snap.exists()) { const e=new Error("NO_ADMIN"); e.code="NO_ADMIN"; throw e; }
-  const data=snap.data()||{};
-  if (data.active === false) { const e=new Error("ADMIN_DISABLED"); e.code="ADMIN_DISABLED"; throw e; }
-  const raw=String(data.role||"reviewer").trim().toLowerCase();
-  const aliases={admin:"superadmin",super_admin:"superadmin",superadmin:"superadmin",contentadmin:"content_admin",content_admin:"content_admin",reviewer:"reviewer"};
-  return aliases[raw]||"reviewer";
+
+  const adminRef =
+    doc(
+      db,
+      "admins",
+      user.uid
+    );
+
+  const snap =
+    await getDoc(adminRef);
+
+  if (
+    !snap.exists() ||
+    snap.data().active !== true
+  ) {
+
+    throw new Error(
+      "NO_ADMIN"
+    );
+  }
+
+  return (
+    snap.data().role ||
+    "reviewer"
+  );
 }
 
 
@@ -2120,23 +2137,56 @@ function parseJSON(
 ========================================================= */
 
 if ($("#loginBtn")) {
-  const loginBtn=$("#loginBtn");
-  loginBtn.onclick=async()=>{
-    const email=$("#email")?.value.trim()||"";
-    const password=$("#password")?.value||"";
-    const loginMsg=$("#loginMsg");
-    if(!email||!password){msg(loginMsg,"أدخل البريد الإلكتروني وكلمة المرور.",true);return;}
-    loginBtn.disabled=true; loginBtn.textContent="جاري تسجيل الدخول...";
-    msg(loginMsg,"جارٍ التحقق من الحساب...",false);
-    try{
-      await signInWithEmailAndPassword(auth,email,password);
-      msg(loginMsg,"تم تسجيل الدخول، جارٍ تحميل لوحة الإدارة...",false);
-    }catch(error){
-      console.error("Login error:",error);
-      const m={"auth/invalid-credential":"البريد الإلكتروني أو كلمة المرور غير صحيحة.","auth/invalid-email":"صيغة البريد الإلكتروني غير صحيحة.","auth/user-disabled":"هذا الحساب معطل في Firebase Authentication.","auth/too-many-requests":"تمت محاولات كثيرة. حاول لاحقًا.","auth/network-request-failed":"تعذر الاتصال بـ Firebase. تحقق من الإنترنت.","auth/operation-not-allowed":"تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في Firebase Authentication."};
-      msg(loginMsg,m[error?.code]||`فشل تسجيل الدخول: ${error?.message||error?.code||"خطأ غير معروف"}`,true);
-    }finally{loginBtn.disabled=false;loginBtn.textContent="دخول";}
-  };
+
+  $("#loginBtn").onclick =
+    async () => {
+
+      const email =
+        $("#email")
+          ?.value
+          .trim();
+
+      const password =
+        $("#password")
+          ?.value || "";
+
+
+      if (!email || !password) {
+
+        msg(
+          $("#loginMsg"),
+          "أدخل البريد الإلكتروني وكلمة المرور.",
+          true
+        );
+
+        return;
+      }
+
+
+      try {
+
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Login error:",
+          error
+        );
+
+        msg(
+          $("#loginMsg"),
+          "فشل تسجيل الدخول. تأكد من البيانات وصلاحية الحساب.",
+          true
+        );
+
+      }
+
+    };
 }
 
 
@@ -3780,25 +3830,111 @@ $("#adminForm")
    AUTH STATE
 ========================================================= */
 
-onAuthStateChanged(auth, async (user) => {
-  const loginSection=$("#loginSection"), dashboard=$("#dashboard"), loginMsg=$("#loginMsg");
-  if(!user){ role=null; loginSection?.classList.remove("hidden"); dashboard?.classList.add("hidden"); return; }
-  try{
-    msg(loginMsg,"تم التحقق من الحساب، جارٍ تحميل الصلاحيات...",false);
-    role=await loadRole(user);
-    loginSection?.classList.add("hidden"); dashboard?.classList.remove("hidden");
-    if($("#adminEmail")) $("#adminEmail").textContent=user.email||user.uid;
-    if($("#roleBadge")) $("#roleBadge").textContent=role;
-    await refresh();
-  }catch(error){
-    console.error("Admin authentication error:",error); role=null;
-    loginSection?.classList.remove("hidden"); dashboard?.classList.add("hidden");
-    const code=error?.code||error?.message||"";
-    let text="تعذر تحميل صلاحيات لوحة الإدارة.";
-    if(code==="NO_ADMIN") text="تم تسجيل الدخول، لكن لا توجد وثيقة أدمن لهذا الحساب في Firestore.";
-    else if(code==="ADMIN_DISABLED") text="تم تسجيل الدخول، لكن حساب الأدمن معطل.";
-    else if(String(code).includes("permission-denied")) text="تم تسجيل الدخول، لكن Firestore رفض قراءة صلاحيات الأدمن. راجع Firestore Rules.";
-    else text+=` (${code})`;
-    msg(loginMsg,text,true);
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    if (!user) {
+
+      role = null;
+
+      $("#loginSection")
+        ?.classList.remove(
+          "hidden"
+        );
+
+
+      $("#dashboard")
+        ?.classList.add(
+          "hidden"
+        );
+
+
+      return;
+    }
+
+
+    try {
+
+      role =
+        await loadRole(
+          user
+        );
+
+
+      $("#loginSection")
+        ?.classList.add(
+          "hidden"
+        );
+
+
+      $("#dashboard")
+        ?.classList.remove(
+          "hidden"
+        );
+
+
+      if ($("#adminEmail")) {
+
+        $("#adminEmail")
+          .textContent =
+          user.email ||
+          user.uid;
+
+      }
+
+
+      if ($("#roleBadge")) {
+
+        $("#roleBadge")
+          .textContent =
+          role;
+
+      }
+
+
+      await refresh();
+
+
+    } catch (error) {
+
+      console.error(
+        "Admin authentication error:",
+        error
+      );
+
+
+      role = null;
+
+
+      try {
+
+        await signOut(
+          auth
+        );
+
+      } catch {}
+
+
+      $("#loginSection")
+        ?.classList.remove(
+          "hidden"
+        );
+
+
+      $("#dashboard")
+        ?.classList.add(
+          "hidden"
+        );
+
+
+      msg(
+        $("#loginMsg"),
+        "هذا الحساب ليس لديه صلاحية أدمن.",
+        true
+      );
+
+    }
+
   }
-});
+);
