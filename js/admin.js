@@ -5,7 +5,8 @@ import { collection, getDocs, query, where, limit, addDoc, updateDoc, deleteDoc,
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = v => String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 const arr = v => Array.isArray(v) ? v : (v ? [v] : []);
-const roleLevel = { reviewer:1, content_admin:2, superadmin:3 };
+const roleLevel = { reviewer:1, content_admin:2, superadmin:3, super_admin:3, admin:3 };
+const normalizeRole = r => r === "super_admin" || r === "admin" ? "superadmin" : (r || "reviewer");
 let role = null, editing = {}, data = {branches:[],subjects:[],categories:[],resources:[],foundations:[],suggestions:[],logs:[],admins:[],templates:[]};
 const cache = n => data[n] || [];
 const can = r => (roleLevel[role]||0) >= (roleLevel[r]||0);
@@ -57,16 +58,17 @@ async function ensureStableIds(){
 }
 
 async function loadAll(){
-  await ensureDefaults();
-  await ensureStableIds();
+  // كل مجموعة تُحمّل بشكل مستقل حتى لا يؤدي permission-denied في جزء واحد إلى طرد الأدمن من اللوحة.
+  const safeAll = async (name, fallback=[]) => { try { return await all(name); } catch(e) { console.warn(`Minhaj: failed loading ${name}`, e); return fallback; } };
+  const safeQuery = async () => { try { const s=await getDocs(query(collection(db,"suggestions"),where("status","==","pending"),limit(300))); return s.docs.map(d=>({id:d.id,...d.data()})); } catch(e) { console.warn("Minhaj: failed loading suggestions",e); return []; } };
+  try { if(role==="superadmin") { try { await ensureDefaults(); } catch(e) { console.warn("defaults skipped",e); } try { await ensureStableIds(); } catch(e) { console.warn("stable ids skipped",e); } } } catch(e) { console.warn("setup skipped",e); }
   const [branches,subjects,categories,resources,foundations,suggestions] = await Promise.all([
-    all("branches"), all("subjects"), all("categories"), all("resources"), all("foundations"),
-    getDocs(query(collection(db,"suggestions"),where("status","==","pending"),limit(300))).then(s=>s.docs.map(d=>({id:d.id,...d.data()})))
+    safeAll("branches"), safeAll("subjects"), safeAll("categories"), safeAll("resources"), safeAll("foundations"), safeQuery()
   ]);
   data={...data,branches,subjects,categories,resources,foundations,suggestions};
-  if(role==="superadmin") data.admins=await all("admins"); else data.admins=[];
-  if(role==="superadmin") data.logs=await all("adminLogs",100).then(x=>x.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))); else data.logs=[];
-  data.templates=can("content_admin") ? await all("templates",100) : [];
+  data.admins = role==="superadmin" ? await safeAll("admins") : [];
+  data.logs = role==="superadmin" ? (await safeAll("adminLogs")).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)) : [];
+  data.templates = can("content_admin") ? await safeAll("templates") : [];
   render();
 }
 function optionHTML(items,valueField="id",labelField="name",selected="",extra=""){ return items.filter(x=>x.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||String(a[labelField]||"").localeCompare(String(b[labelField]||""),"ar")).map(x=>`<option value="${esc(x[valueField])}" ${x[valueField]===selected?"selected":""}>${esc(x[labelField])}</option>`).join(""); }
@@ -161,4 +163,25 @@ $("#adminForm").onsubmit=async e=>{e.preventDefault();if(role!=="superadmin")ret
 
 $("#loginBtn").onclick=async()=>{try{await signInWithEmailAndPassword(auth,$("#email").value.trim(),$("#password").value);msg($("#loginMsg"),"تم تسجيل الدخول.");}catch(e){msg($("#loginMsg"),errorText(e),true);}}; $("#logoutBtn").onclick=()=>signOut(auth);
 
-onAuthStateChanged(auth,async user=>{if(!user){role=null;$("#loginSection").classList.remove("hidden");$("#dashboard").classList.add("hidden");return;}try{const s=await getDoc(doc(db,"admins",user.uid));if(!s.exists()||s.data().active!==true)throw Error("هذا الحساب ليس أدمن نشطًا.");role=s.data().role||"reviewer";$("#adminEmail").textContent=user.email||"الأدمن";$("#roleBadge").textContent=role;$("#loginSection").classList.add("hidden");$("#dashboard").classList.remove("hidden");await loadAll();}catch(e){await signOut(auth);msg($("#loginMsg"),errorText(e),true);}});
+onAuthStateChanged(auth,async user=>{
+  if(!user){ role=null; $("#loginSection")?.classList.remove("hidden"); $("#dashboard")?.classList.add("hidden"); return; }
+  try{
+    const s=await getDoc(doc(db,"admins",user.uid));
+    if(!s.exists()) throw Error("ADMIN_NOT_FOUND");
+    const adminData=s.data()||{};
+    if(adminData.active===false) throw Error("ADMIN_DISABLED");
+    role=normalizeRole(adminData.role);
+    $("#adminEmail").textContent=user.email||"الأدمن";
+    $("#roleBadge").textContent=role;
+    $("#loginSection")?.classList.add("hidden");
+    $("#dashboard")?.classList.remove("hidden");
+    await loadAll();
+  }catch(e){
+    console.error("Admin auth error",e);
+    role=null;
+    // لا نعمل signOut بسبب خطأ تحميل بيانات. تسجيل الدخول نفسه ناجح.
+    try { await signOut(auth); } catch {}
+    const text=e?.message==="ADMIN_NOT_FOUND" ? "تم تسجيل الدخول، لكن لا توجد وثيقة أدمن لهذا UID في Firestore." : e?.message==="ADMIN_DISABLED" ? "حساب الأدمن موقوف." : "تعذر التحقق من صلاحيات الأدمن: "+errorText(e);
+    msg($("#loginMsg"),text,true);
+  }
+});
