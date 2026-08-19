@@ -2,78 +2,198 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
+
+    // =========================
+    // AUTH
+    // =========================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminPath(uid) {
+      return /databases/$(database)/documents/admins/$(uid);
+    }
+
+    function currentAdminExists() {
+      return signedIn() && exists(adminPath(request.auth.uid));
+    }
+
+    function currentAdmin() {
+      return get(adminPath(request.auth.uid));
+    }
 
     function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+      return currentAdminExists()
+        && currentAdmin().data.active == true;
     }
 
     function adminRole() {
       return isAdmin()
-        ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role
+        ? currentAdmin().data.role
         : "";
     }
 
     function isReviewer() {
-      return isAdmin() && (adminRole() == "reviewer" || adminRole() == "content_admin" || adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+      return isAdmin()
+        && (
+          adminRole() == "reviewer" ||
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin"
+        );
     }
 
     function isContentAdmin() {
-      return isAdmin() && (adminRole() == "content_admin" || adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+      return isAdmin()
+        && (
+          adminRole() == "content_admin" ||
+          adminRole() == "superadmin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin"
+        );
     }
 
     function isSuperAdmin() {
-      return isAdmin() && (adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+      return isAdmin()
+        && (
+          adminRole() == "superadmin" ||
+          adminRole() == "super_admin" ||
+          adminRole() == "admin"
+        );
     }
+
+
+    // =========================
+    // ADMINS
+    // =========================
 
     match /admins/{uid} {
-      allow get: if signedIn() && (request.auth.uid == uid || isSuperAdmin());
+
+      // الأدمن يستطيع قراءة مستنده فقط
+      // والسوبر أدمن يستطيع قراءة أي أدمن
+      allow get: if signedIn()
+        && (
+          request.auth.uid == uid ||
+          isSuperAdmin()
+        );
+
       allow list: if isSuperAdmin();
+
       allow create, update: if isSuperAdmin();
+
+      // الحذف ممنوع من الواجهة
       allow delete: if false;
     }
+
+
+    // =========================
+    // BRANCHES
+    // =========================
 
     match /branches/{branchId} {
+
+      // الموقع العام يستطيع القراءة
       allow read: if true;
+
+      // فقط Super Admin يعدل الفروع
       allow create, update, delete: if isSuperAdmin();
     }
+
+
+    // =========================
+    // CATEGORIES
+    // =========================
 
     match /categories/{categoryId} {
+
       allow read: if true;
+
       allow create, update, delete: if isSuperAdmin();
     }
 
+
+    // =========================
+    // SUBJECTS
+    // =========================
+
     match /subjects/{subjectId} {
+
       allow read: if true;
+
       allow create, update, delete: if isContentAdmin();
     }
+
+
+    // =========================
+    // RESOURCES
+    // =========================
 
     match /resources/{resourceId} {
+
       allow read: if true;
+
       allow create, update, delete: if isContentAdmin();
     }
+
+
+    // =========================
+    // FOUNDATIONS
+    // =========================
 
     match /foundations/{foundationId} {
+
       allow read: if true;
+
       allow create, update, delete: if isContentAdmin();
     }
 
+
+    // =========================
+    // SUGGESTIONS
+    // =========================
+
     match /suggestions/{suggestionId} {
+
+      // الطالب يستطيع إرسال اقتراح
       allow create: if true;
+
+      // المراجعين وما فوق يستطيعون قراءة ومراجعة الاقتراحات
       allow read, update: if isReviewer();
+
+      // لا نحذف اقتراحات الطلاب
       allow delete: if false;
     }
 
+
+    // =========================
+    // ADMIN LOGS
+    // =========================
+
     match /adminLogs/{logId} {
+
+      // فقط Super Admin
       allow read, create: if isSuperAdmin();
+
       allow update, delete: if false;
     }
 
+
+    // =========================
+    // TEMPLATES
+    // =========================
+
     match /templates/{templateId} {
+
+      // Content Admin وما فوق
       allow read, create, update, delete: if isContentAdmin();
     }
+
+
+    // =========================
+    // DEFAULT DENY
+    // =========================
 
     match /{document=**} {
       allow read, write: if false;
