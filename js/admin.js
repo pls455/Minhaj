@@ -51,9 +51,11 @@ const arr = (value) =>
       : [];
 
 
-let branches = {};
-let branchRecords = [];
-let categories = [];
+const branches = {
+  scientific: "العلمي",
+  literary: "الأدبي",
+  industrial: "الصناعي"
+};
 
 
 let role = null;
@@ -63,7 +65,6 @@ let resources = [];
 let foundations = [];
 let suggestions = [];
 let admins = [];
-let editingBranch = null;
 
 let editing = null;
 
@@ -125,65 +126,6 @@ function errorMessage(error) {
 /* =========================================================
    BRANCHES
 ========================================================= */
-
-function stableUID(prefix = "ID") {
-  return `${prefix}_${crypto.randomUUID().replaceAll("-", "").slice(0, 12).toUpperCase()}`;
-}
-
-async function loadBranchesAndCategories() {
-  const [branchSnap, categorySnap] = await Promise.all([
-    getDocs(collection(db, "branches")).catch(() => ({ docs: [] })),
-    getDocs(collection(db, "categories")).catch(() => ({ docs: [] }))
-  ]);
-  branchRecords = branchSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  branchRecords.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name||"").localeCompare(String(b.name||""), "ar"));
-  if (!branchRecords.length) {
-    branchRecords = [
-      { id: "scientific", uid: "scientific", name: "العلمي", icon: "🔬", order: 1, active: true },
-      { id: "literary", uid: "literary", name: "الأدبي", icon: "📖", order: 2, active: true },
-      { id: "industrial", uid: "industrial", name: "الصناعي", icon: "⚙️", order: 3, active: true }
-    ];
-  }
-  branches = Object.fromEntries(branchRecords.map(b => [b.uid || b.id, b.name || b.uid || b.id]));
-  categories = categorySnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  categories.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999) || String(a.name||"").localeCompare(String(b.name||""), "ar"));
-}
-
-function branchOptions(selected = [], activeOnly = false) {
-  const set = new Set(arr(selected));
-  return branchRecords.filter(b => !activeOnly || b.active !== false).map(b => {
-    const uid = b.uid || b.id;
-    return `<option value="${esc(uid)}" ${set.has(uid) ? "selected" : ""}>${esc(b.name || uid)} — ${esc(uid)}</option>`;
-  }).join("");
-}
-
-function categoryOptions(selected = "") {
-  let html = `<option value="">بدون تصنيف</option>`;
-  html += categories.map(c => {
-    const id = c.uid || c.id;
-    return `<option value="${esc(id)}" ${String(selected)===String(id) ? "selected" : ""}>${esc(c.name || id)}</option>`;
-  }).join("");
-  if (selected && !categories.some(c => String(c.uid || c.id) === String(selected))) {
-    html += `<option value="${esc(selected)}" selected>${esc(selected)} (قديم)</option>`;
-  }
-  return html;
-}
-
-function populateDynamicSelectors() {
-  const subjectBranches = $("#subjectBranches");
-  if (subjectBranches) subjectBranches.innerHTML = branchOptions([], true);
-  const resourceBranch = $("#resourceBranch");
-  if (resourceBranch) resourceBranch.innerHTML = `<option value="">الفرع</option>` + branchOptions([], true);
-  const foundationBranch = $("#foundationBranch");
-  if (foundationBranch) foundationBranch.innerHTML = `<option value="">الفرع</option>` + branchOptions([], true);
-  const resourceCategory = $("#resourceCategory");
-  if (resourceCategory) resourceCategory.innerHTML = categoryOptions();
-  const subjectCategory = $("#subjectCategory");
-  if (subjectCategory) subjectCategory.innerHTML = categoryOptions();
-  const tb = $("#templateBranches"); if (tb) tb.innerHTML = branchOptions([], false);
-  const ts = $("#templateSubjects"); if (ts) ts.innerHTML = subjects.map(x => `<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.uid || x.id)}</option>`).join("");
-  const tc = $("#templateCategories"); if (tc) tc.innerHTML = categories.map(x => `<option value="${esc(x.id)}">${esc(x.name)} — ${esc(x.uid || x.id)}</option>`).join("");
-}
 
 function branchesHTML(ids = []) {
 
@@ -248,27 +190,16 @@ function normalizeImportURL(value) {
 ========================================================= */
 
 async function loadRole(user) {
-  const adminRef = doc(db, "admins", user.uid);
-  const snap = await getDoc(adminRef);
-
-  if (!snap.exists()) throw new Error("NO_ADMIN");
-
-  const data = snap.data() || {};
-  if (data.active === false) throw new Error("ADMIN_DISABLED");
-
-  const rawRole = String(data.role || data.permission || "reviewer").trim().toLowerCase();
-  const normalizedRole = ({
-    admin: "superadmin",
-    super_admin: "superadmin",
-    superadmin: "superadmin",
-    contentadmin: "content_admin",
-    content_admin: "content_admin",
-    reviewer: "reviewer"
-  })[rawRole] || rawRole;
-
-  if (!roleLevel[normalizedRole]) throw new Error("INVALID_ADMIN_ROLE");
-  return normalizedRole;
+  if (!user?.uid) throw new Error("NO_USER");
+  const snap = await getDoc(doc(db, "admins", user.uid));
+  if (!snap.exists()) { const e=new Error("NO_ADMIN"); e.code="NO_ADMIN"; throw e; }
+  const data=snap.data()||{};
+  if (data.active === false) { const e=new Error("ADMIN_DISABLED"); e.code="ADMIN_DISABLED"; throw e; }
+  const raw=String(data.role||"reviewer").trim().toLowerCase();
+  const aliases={admin:"superadmin",super_admin:"superadmin",superadmin:"superadmin",contentadmin:"content_admin",content_admin:"content_admin",reviewer:"reviewer"};
+  return aliases[raw]||"reviewer";
 }
+
 
 /* =========================================================
    LOAD COLLECTION
@@ -300,8 +231,6 @@ async function all(collectionName) {
 async function refresh() {
 
   try {
-
-    await loadBranchesAndCategories();
 
     const [
       subjectsResult,
@@ -369,7 +298,7 @@ async function refresh() {
 
 
     updateCounters();
-    populateDynamicSelectors();
+
     renderAll();
 
   } catch (error) {
@@ -443,9 +372,9 @@ function subjectOptions(
         return true;
       }
 
-      const ids = arr(subject.branchIds);
-      const uid = branchRecords.find(b => b.id === branch || b.uid === branch)?.uid || branch;
-      return ids.includes(branch) || ids.includes(uid);
+      return arr(
+        subject.branchIds
+      ).includes(branch);
 
     })
 
@@ -510,19 +439,6 @@ function renderAll() {
 
 
   /* =======================================================
-     BRANCHES
-  ======================================================= */
-  if ($("#branchesList")) {
-    $("#branchesList").innerHTML = branchRecords.map(b => `
-      <div class="admin-item">
-        <div><strong>${esc(b.icon || "🌿")} ${esc(b.name || b.uid || b.id)}</strong>
-        <p>UID: <code>${esc(b.uid || b.id)}</code> · ${b.active === false ? "مخفي" : "ظاهر"} · ترتيب ${b.order ?? "-"}</p>
-        ${documentIdHTML(b.id)}</div>
-        <div><button class="btn small" data-edit-branch="${esc(b.id)}">تعديل</button><button class="btn danger small" data-del-branch="${esc(b.id)}">حذف</button></div>
-      </div>`).join("") || '<div class="empty">لا توجد فروع.</div>';
-  }
-
-  /* =======================================================
      SUBJECTS
   ======================================================= */
 
@@ -550,8 +466,10 @@ function renderAll() {
                 </strong>
 
                 <p>
-                  ${branchesHTML(subject.branchIds)}
-                  · ${esc(subject.category || subject.categoryId || "بدون تصنيف")}
+                  ${branchesHTML(
+                    subject.branchIds
+                  )}
+
                   · ترتيب
                   ${subject.order ?? "-"}
 
@@ -1581,35 +1499,6 @@ document.addEventListener(
 
 
     /* =====================================================
-       BRANCH CRUD
-    ===================================================== */
-    if (target.id === "addBranchBtn") {
-      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
-      editingBranch = null;
-      $("#branchForm")?.reset();
-      $("#branchActive").checked = true;
-      $("#branchForm")?.classList.remove("hidden");
-      openTab("branches");
-      return;
-    }
-    if (target.id === "cancelBranch") { $("#branchForm")?.classList.add("hidden"); editingBranch=null; return; }
-    if (target.dataset.editBranch) {
-      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
-      const b=branchRecords.find(x=>x.id===target.dataset.editBranch); if(!b)return;
-      editingBranch=b.id; $("#branchName").value=b.name||""; $("#branchIcon").value=b.icon||""; $("#branchOrder").value=b.order??""; $("#branchDescription").value=b.description||""; $("#branchActive").checked=b.active!==false; $("#branchForm")?.classList.remove("hidden"); openTab("branches"); return;
-    }
-    if (target.dataset.delBranch) {
-      if (role !== "superadmin") return alert("هذه العملية لـ Super Admin فقط.");
-      const b=branchRecords.find(x=>x.id===target.dataset.delBranch); if(!b)return;
-      const uid=b.uid||b.id; const used=subjects.some(s=>arr(s.branchIds).includes(uid)) || resources.some(r=>arr(r.branchIds||r.branchId).includes(uid)) || foundations.some(f=>arr(f.branchIds||f.branchId).includes(uid));
-      if(used) return alert("لا يمكن حذف الفرع لأنه مرتبط بمواد أو مصادر أو تأسيس. أخفِه بدل الحذف.");
-      if(!confirm(`حذف الفرع «${b.name}»؟`)) return;
-      try { await deleteDoc(doc(db,"branches",b.id)); await refresh(); } catch(e){ alert("فشل حذف الفرع:
-"+errorMessage(e)); }
-      return;
-    }
-
-    /* =====================================================
        ADD SUBJECT
     ===================================================== */
 
@@ -1931,9 +1820,17 @@ function editSubject(id) {
     subject.description || "";
 
 
-  $("#subjectBranches").innerHTML = branchOptions(subject.branchIds || [], true);
-  $("#subjectCategory").innerHTML = categoryOptions(subject.categoryId || subject.category || "");
-  $("#subjectCategory").value = subject.categoryId || subject.category || "";
+  $$("#subjectForm input[type=checkbox]")
+    .forEach((checkbox) => {
+
+      checkbox.checked =
+        arr(
+          subject.branchIds
+        ).includes(
+          checkbox.value
+        );
+
+    });
 
 
   $("#subjectForm")
@@ -2017,8 +1914,11 @@ function editResource(id) {
     resource.type || "";
 
 
-  $("#resourceCategory").innerHTML = categoryOptions(resource.categoryId || resource.category || "");
-  $("#resourceCategory").value = resource.categoryId || resource.category || "";
+  $("#resourceCategory")
+    .value =
+    resource.category ||
+    resource.categoryId ||
+    "";
 
 
   $("#resourceKeywords")
@@ -2220,56 +2120,23 @@ function parseJSON(
 ========================================================= */
 
 if ($("#loginBtn")) {
-
-  $("#loginBtn").onclick =
-    async () => {
-
-      const email =
-        $("#email")
-          ?.value
-          .trim();
-
-      const password =
-        $("#password")
-          ?.value || "";
-
-
-      if (!email || !password) {
-
-        msg(
-          $("#loginMsg"),
-          "أدخل البريد الإلكتروني وكلمة المرور.",
-          true
-        );
-
-        return;
-      }
-
-
-      try {
-
-        await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Login error:",
-          error
-        );
-
-        msg(
-          $("#loginMsg"),
-          "فشل تسجيل الدخول. تأكد من البيانات وصلاحية الحساب.",
-          true
-        );
-
-      }
-
-    };
+  const loginBtn=$("#loginBtn");
+  loginBtn.onclick=async()=>{
+    const email=$("#email")?.value.trim()||"";
+    const password=$("#password")?.value||"";
+    const loginMsg=$("#loginMsg");
+    if(!email||!password){msg(loginMsg,"أدخل البريد الإلكتروني وكلمة المرور.",true);return;}
+    loginBtn.disabled=true; loginBtn.textContent="جاري تسجيل الدخول...";
+    msg(loginMsg,"جارٍ التحقق من الحساب...",false);
+    try{
+      await signInWithEmailAndPassword(auth,email,password);
+      msg(loginMsg,"تم تسجيل الدخول، جارٍ تحميل لوحة الإدارة...",false);
+    }catch(error){
+      console.error("Login error:",error);
+      const m={"auth/invalid-credential":"البريد الإلكتروني أو كلمة المرور غير صحيحة.","auth/invalid-email":"صيغة البريد الإلكتروني غير صحيحة.","auth/user-disabled":"هذا الحساب معطل في Firebase Authentication.","auth/too-many-requests":"تمت محاولات كثيرة. حاول لاحقًا.","auth/network-request-failed":"تعذر الاتصال بـ Firebase. تحقق من الإنترنت.","auth/operation-not-allowed":"تسجيل الدخول بالبريد وكلمة المرور غير مفعّل في Firebase Authentication."};
+      msg(loginMsg,m[error?.code]||`فشل تسجيل الدخول: ${error?.message||error?.code||"خطأ غير معروف"}`,true);
+    }finally{loginBtn.disabled=false;loginBtn.textContent="دخول";}
+  };
 }
 
 
@@ -2389,9 +2256,12 @@ if ($("#subjectForm")) {
             .value
             .trim(),
 
-        branchIds: [...($("#subjectBranches")?.selectedOptions || [])].map(o => o.value),
-        categoryId: $("#subjectCategory")?.value || "",
-        category: categories.find(c => String(c.uid || c.id) === String($("#subjectCategory")?.value || ""))?.name || "",
+        branchIds:
+          $$("#subjectForm input[type=checkbox]:checked")
+            .map(
+              (checkbox) =>
+                checkbox.value
+            ),
 
         description:
           $("#subjectDescription")
@@ -2456,7 +2326,6 @@ if ($("#subjectForm")) {
             ),
             {
               ...data,
-              uid: stableUID("SUB"),
               createdAt:
                 serverTimestamp()
             }
@@ -2635,8 +2504,10 @@ if ($("#resourceForm")) {
             .value
             .trim(),
 
-        categoryId: $("#resourceCategory").value || "",
-        category: categories.find(c => String(c.uid || c.id) === String($("#resourceCategory").value || ""))?.name || $("#resourceCategory").value || "",
+        category:
+          $("#resourceCategory")
+            .value
+            .trim(),
 
         keywords:
           $("#resourceKeywords")
@@ -2736,26 +2607,6 @@ if ($("#resourceForm")) {
     };
 }
 
-
-/* =========================================================
-   BRANCH FORM
-========================================================= */
-if ($("#branchForm")) {
-  $("#branchForm").onsubmit = async (event) => {
-    event.preventDefault();
-    if (role !== "superadmin") return msg($("#branchMsg"), "هذه العملية لـ Super Admin فقط.", true);
-    const name=$("#branchName").value.trim(); if(!name) return msg($("#branchMsg"),"أدخل اسم الفرع.",true);
-    const data={name, icon:$("#branchIcon").value.trim() || "🌿", order:Number($("#branchOrder").value)||9999, description:$("#branchDescription").value.trim(), active:$("#branchActive").checked, updatedAt:serverTimestamp()};
-    try {
-      if(editingBranch) {
-        const existing = branchRecords.find(x=>x.id===editingBranch);
-        await updateDoc(doc(db,"branches",editingBranch),{...data,uid:existing?.uid || stableUID("BR")});
-      } else await addDoc(collection(db,"branches"),{...data,uid:stableUID("BR"),createdAt:serverTimestamp()});
-      editingBranch=null; $("#branchForm").classList.add("hidden"); await refresh();
-    } catch(e){ msg($("#branchMsg"),"فشل حفظ الفرع:
-"+errorMessage(e),true); }
-  };
-}
 
 /* =========================================================
    FOUNDATION FORM
@@ -3024,14 +2875,12 @@ async function importItems(
   }
 
 
-  const parsed = parseJSON(textSelector, messageSelector);
-  if (!parsed) return;
-  const refs = parsed.refs || {};
-  const presets = parsed.presets || {};
-  let list = Array.isArray(parsed) ? parsed : (parsed.resources || parsed.foundations || parsed.items || []);
-  const resolveRef = (v) => { const x=String(v??"").trim(); return x.startsWith("$") && refs[x.slice(1)] ? refs[x.slice(1)] : x; };
-  const expand = (item) => { const p=item.preset && String(item.preset).startsWith("$") ? presets[String(item.preset).slice(1)] : null; const out={...(p||{}),...item}; ["branch","branchId","subject","subjectId","category","categoryId"].forEach(k=>{if(k in out)out[k]=resolveRef(out[k]);}); if(Array.isArray(out.branchIds))out.branchIds=out.branchIds.map(resolveRef); return out; };
-  list=list.map(expand);
+  const list =
+    parseJSON(
+      textSelector,
+      messageSelector
+    );
+
 
   if (!Array.isArray(list)) {
 
@@ -3272,7 +3121,10 @@ ${errorMessage(error)}`,
     }
 
 
-    const subjectId = String(item.subjectId ?? item.subject ?? "").trim();
+    const subjectId =
+      String(
+        item.subjectId ?? ""
+      ).trim();
 
 
     if (!subjectId) {
@@ -3500,8 +3352,11 @@ ${errorMessage(error)}`,
           ""
         ).trim();
 
-      data.categoryId = String(item.categoryId || item.category || "").trim();
-      data.category = categories.find(c=>String(c.uid||c.id)===data.categoryId)?.name || String(item.categoryName||item.category||"").trim();
+      data.category =
+        String(
+          item.category ||
+          ""
+        ).trim();
 
     }
 
@@ -3709,29 +3564,6 @@ ${invalid}`,
   await refresh();
 }
 
-
-/* =========================================================
-   BULK TEMPLATE GENERATOR
-========================================================= */
-function refAlias(name, used){ let base=String(name||"ref").trim().toLowerCase().replace(/[^a-z0-9_\u0600-\u06ff]+/g,"_").replace(/^_+|_+$/g,"")||"ref"; let a=base,i=2; while(used.has(a))a=`${base}_${i++}`; used.add(a); return a; }
-function generateImportTemplate(general=false){
-  const selectedB=general?branchRecords.map(x=>x.uid||x.id):[...($("#templateBranches")?.selectedOptions||[])].map(o=>o.value);
-  const selectedS=general?subjects.map(x=>x.uid||x.id):[...($("#templateSubjects")?.selectedOptions||[])].map(o=>o.value);
-  const selectedC=general?categories.map(x=>x.uid||x.id):[...($("#templateCategories")?.selectedOptions||[])].map(o=>o.value);
-  const used=new Set(),refs={}, aliases={};
-  const add=(list,records,key,prefix)=>list.forEach(id=>{const x=records.find(r=>(r.uid||r.id)===id||r.id===id);if(!x)return;const a=refAlias(x.name,used);refs[a]=x.uid||x.id;aliases[key]=aliases[key]||{};aliases[key][id]=`$${a}`;});
-  add(selectedB,branchRecords,"branches","BR"); add(selectedS,subjects,"subjects","SUB"); add(selectedC,categories,"categories","CAT");
-  const presets={};
-  const b=selectedB[0],s=selectedS[0],c=selectedC[0];
-  if(b&&s&&c){ const bn=branchRecords.find(x=>(x.uid||x.id)===b)?.name||"branch"; const sn=subjects.find(x=>(x.uid||x.id)===s)?.name||"subject"; const cn=categories.find(x=>(x.uid||x.id)===c)?.name||"category"; presets[refAlias(`${bn}_${sn}_${cn}`,used)]={branch:aliases.branches[b],subject:aliases.subjects[s],category:aliases.categories[c]}; }
-  const out={refs,presets,resources:[]};
-  $("#generatedImportTemplate").value=JSON.stringify(out,null,2);
-  msg($("#templateMsg"),`تم إنشاء ${general?"القالب العام":"القالب المحدد"}: ${Object.keys(refs).length} مرجع.`,false);
-}
-
-if($("#generateImportTemplate")) $("#generateImportTemplate").onclick=()=>generateImportTemplate(false);
-if($("#generateGeneralImportTemplate")) $("#generateGeneralImportTemplate").onclick=()=>generateImportTemplate(true);
-if($("#copyImportTemplate")) $("#copyImportTemplate").onclick=async()=>{const text=$("#generatedImportTemplate")?.value||"";if(!text)return msg($("#templateMsg"),"أنشئ قالبًا أولًا.",true);try{await navigator.clipboard.writeText(text);msg($("#templateMsg"),"تم نسخ القالب.",false);}catch{alert("تعذر النسخ التلقائي.");}};
 
 /* =========================================================
    BULK BUTTONS
@@ -3948,111 +3780,25 @@ $("#adminForm")
    AUTH STATE
 ========================================================= */
 
-onAuthStateChanged(
-  auth,
-  async (user) => {
-
-    if (!user) {
-
-      role = null;
-
-      $("#loginSection")
-        ?.classList.remove(
-          "hidden"
-        );
-
-
-      $("#dashboard")
-        ?.classList.add(
-          "hidden"
-        );
-
-
-      return;
-    }
-
-
-    try {
-
-      role =
-        await loadRole(
-          user
-        );
-
-
-      $("#loginSection")
-        ?.classList.add(
-          "hidden"
-        );
-
-
-      $("#dashboard")
-        ?.classList.remove(
-          "hidden"
-        );
-
-
-      if ($("#adminEmail")) {
-
-        $("#adminEmail")
-          .textContent =
-          user.email ||
-          user.uid;
-
-      }
-
-
-      if ($("#roleBadge")) {
-
-        $("#roleBadge")
-          .textContent =
-          role;
-
-      }
-
-
-      await refresh();
-
-
-    } catch (error) {
-
-      console.error(
-        "Admin authentication error:",
-        error
-      );
-
-
-      role = null;
-
-
-      try {
-
-        await signOut(
-          auth
-        );
-
-      } catch {}
-
-
-      $("#loginSection")
-        ?.classList.remove(
-          "hidden"
-        );
-
-
-      $("#dashboard")
-        ?.classList.add(
-          "hidden"
-        );
-
-
-      msg(
-        $("#loginMsg"),
-        "هذا الحساب ليس لديه صلاحية أدمن.",
-        true
-      );
-
-    }
-
+onAuthStateChanged(auth, async (user) => {
+  const loginSection=$("#loginSection"), dashboard=$("#dashboard"), loginMsg=$("#loginMsg");
+  if(!user){ role=null; loginSection?.classList.remove("hidden"); dashboard?.classList.add("hidden"); return; }
+  try{
+    msg(loginMsg,"تم التحقق من الحساب، جارٍ تحميل الصلاحيات...",false);
+    role=await loadRole(user);
+    loginSection?.classList.add("hidden"); dashboard?.classList.remove("hidden");
+    if($("#adminEmail")) $("#adminEmail").textContent=user.email||user.uid;
+    if($("#roleBadge")) $("#roleBadge").textContent=role;
+    await refresh();
+  }catch(error){
+    console.error("Admin authentication error:",error); role=null;
+    loginSection?.classList.remove("hidden"); dashboard?.classList.add("hidden");
+    const code=error?.code||error?.message||"";
+    let text="تعذر تحميل صلاحيات لوحة الإدارة.";
+    if(code==="NO_ADMIN") text="تم تسجيل الدخول، لكن لا توجد وثيقة أدمن لهذا الحساب في Firestore.";
+    else if(code==="ADMIN_DISABLED") text="تم تسجيل الدخول، لكن حساب الأدمن معطل.";
+    else if(String(code).includes("permission-denied")) text="تم تسجيل الدخول، لكن Firestore رفض قراءة صلاحيات الأدمن. راجع Firestore Rules.";
+    else text+=` (${code})`;
+    msg(loginMsg,text,true);
   }
-);
+});
