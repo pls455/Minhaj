@@ -16,6 +16,10 @@ const normalizeUrl = v => { try { const u=new URL(String(v||"").trim()); u.hash=
 const branchName = id => cache("branches").find(x=>x.id===id||x.stableId===id)?.name || id || "غير محدد";
 const categoryName = id => cache("categories").find(x=>x.id===id||x.stableId===id)?.name || id || "غير مصنف";
 const subjectName = id => cache("subjects").find(x=>x.id===id||x.stableId===id)?.name || id || "غير محدد";
+const normalizeKey = v => String(v||"").trim().toLowerCase().replace(/[\s_-]+/g,"");
+const resolveBranch = id => { const k=normalizeKey(id); const aliases={scientific:["scientific","science","علمي"],literary:["literary","arts","أدبي","شرعي"],industrial:["industrial","صناعي"],commercial:["commercial","تجاري"],entrepreneur:["entrepreneur","entrepreneurial","ريادي"]}; return cache("branches").find(b=>b.id===String(id)||b.stableId===String(id)||b.name===String(id)||Object.values(aliases).some(a=>a.includes(String(id))&&(a.includes(b.stableId)||a.includes(b.name))))?.id||null; };
+const resolveSubject = id => { const raw=String(id||"").trim(), k=normalizeKey(raw); let x=cache("subjects").find(s=>s.id===raw||s.stableId===raw||s.name===raw); if(x)return x; const aliases={mathematics:["رياضيات","الرياضيات"],mathematics2:["رياضيات","الرياضيات"],arabic:["عربي","اللغة العربية"],english:["إنجليزي","اللغة الإنجليزية"],physics:["فيزياء"],chemistry:["كيمياء"],biology:["أحياء","أحياء"]}; const names=aliases[k]||[]; x=cache("subjects").find(s=>names.includes(String(s.name||""))||names.some(n=>String(s.name||"").includes(n))); if(k==="mathematics2") x=cache("subjects").find(s=>/رياضيات|الرياضيات/.test(String(s.name||"")) && (arr(s.branchIds).some(b=>/literary|arts|أدبي|شرعي/.test(String(b)))||/أدبي|شرعي/.test(String(s.description||""))))||x; return x||null; };
+const resolveCategory = id => { const raw=String(id||"").trim(); return cache("categories").find(c=>c.id===raw||c.stableId===raw||c.name===raw)||null; };
 const branchIdsOfSubject = s => arr(s?.branchIds).length ? arr(s.branchIds) : arr(s?.branchId);
 const branchesOf = x => { const ids=arr(x?.branchIds); return ids.length?ids:arr(x?.branchId); };
 const nowLog = async (action, collectionName, targetId, details="") => { try { await addDoc(collection(db,"adminLogs"), {action,collection:collectionName,targetId:String(targetId||""),details:String(details||""),adminUid:auth.currentUser?.uid||"",adminEmail:auth.currentUser?.email||"",role,createdAt:serverTimestamp()}); } catch(e){ console.warn("log failed",e); } };
@@ -60,8 +64,8 @@ async function loadAll(){
     getDocs(query(collection(db,"suggestions"),where("status","==","pending"),limit(300))).then(s=>s.docs.map(d=>({id:d.id,...d.data()})))
   ]);
   data={...data,branches,subjects,categories,resources,foundations,suggestions};
-  if(role==="superadmin") data.admins=await all("admins"); else data.admins=[];
-  if(role==="superadmin") data.logs=await all("adminLogs",100).then(x=>x.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))); else data.logs=[];
+  if(role==="superadmin") { try { data.admins=await all("admins"); } catch(e) { data.admins=[]; console.warn("admins load failed",e); } } else data.admins=[];
+  if(role==="superadmin") { try { data.logs=await all("adminLogs",100).then(x=>x.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))); } catch(e) { data.logs=[]; console.warn("adminLogs load failed",e); } } else data.logs=[];
   render();
 }
 function optionHTML(items,valueField="id",labelField="name",selected="",extra=""){ return items.filter(x=>x.active!==false).sort((a,b)=>(a.order??9999)-(b.order??9999)||String(a[labelField]||"").localeCompare(String(b[labelField]||""),"ar")).map(x=>`<option value="${esc(x[valueField])}" ${x[valueField]===selected?"selected":""}>${esc(x[labelField])}</option>`).join(""); }
@@ -127,60 +131,10 @@ $("#categoryForm").onsubmit=async e=>{e.preventDefault();if(!can("superadmin"))r
 $("#resourceForm").onsubmit=async e=>{e.preventDefault();if(!can("content_admin"))return;const url=$("#resourceUrl").value.trim();try{new URL(url);}catch{return msg($("#resourceMsg"),"الرابط غير صالح.",true);}const subjectId=$("#resourceSubject").value, ids=checked($("#resourceBranches"));const subject=data.subjects.find(s=>s.id===subjectId);const finalBranches=ids.length?ids:branchesOfSubject(subject);if(!subjectId)return msg($("#resourceMsg"),"اختر المادة.",true);if(!finalBranches.length)return msg($("#resourceMsg"),"المادة لا تحتوي فروعًا.",true);const dup=data.resources.some(r=>normalizeUrl(r.url)===normalizeUrl(url)&&r.id!==editing.resource);if(dup)return msg($("#resourceMsg"),"هذا الرابط موجود بالفعل.",true);const payload={title:$("#resourceTitle").value.trim(),url,subjectId,branchIds:finalBranches,categoryId:$("#resourceCategory").value,type:$("#resourceType").value.trim(),keywords:$("#resourceKeywords").value.split(",").map(x=>x.trim()).filter(Boolean),order:Number($("#resourceOrder").value)||9999,active:$("#resourceActive").checked,description:$("#resourceDescription").value.trim(),stableId:slug($("#resourceTitle").value)};try{if(editing.resource)await updateDoc(doc(db,"resources",editing.resource),{...payload,updatedAt:serverTimestamp()});else await addDoc(collection(db,"resources"),{...payload,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});await nowLog(editing.resource?"تعديل مصدر":"إضافة مصدر","resources",editing.resource||"new",payload.title);$("#resourceForm").classList.add("hidden");await loadAll();}catch(err){msg($("#resourceMsg"),errorText(err),true);}};
 $("#foundationForm").onsubmit=async e=>{e.preventDefault();if(!can("content_admin"))return;const url=$("#foundationUrl").value.trim();try{new URL(url);}catch{return msg($("#foundationMsg"),"الرابط غير صالح.",true);}const subjectId=$("#foundationSubject").value,ids=checked($("#foundationBranches"));const subject=data.subjects.find(s=>s.id===subjectId);const finalBranches=ids.length?ids:branchesOfSubject(subject);if(!subjectId||!finalBranches.length)return msg($("#foundationMsg"),"اختر المادة وفروعها.",true);const payload={title:$("#foundationTitle").value.trim(),url,subjectId,branchIds:finalBranches,level:$("#foundationLevel").value,type:$("#foundationType").value,keywords:$("#foundationKeywords").value.split(",").map(x=>x.trim()).filter(Boolean),order:Number($("#foundationOrder").value)||9999,description:$("#foundationDescription").value.trim(),stableId:slug($("#foundationTitle").value)};try{if(editing.foundation)await updateDoc(doc(db,"foundations",editing.foundation),{...payload,updatedAt:serverTimestamp()});else await addDoc(collection(db,"foundations"),{...payload,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});await nowLog(editing.foundation?"تعديل تأسيس":"إضافة تأسيس","foundations",editing.foundation||"new",payload.title);$("#foundationForm").classList.add("hidden");await loadAll();}catch(err){msg($("#foundationMsg"),errorText(err),true);}};
 
-async function importItems(selector,col,msgSelector,type){
-  if(!can("content_admin"))return msg($(msgSelector),"ليس لديك صلاحية.",true);
-  let parsed;
-  try{parsed=JSON.parse($(selector).value);}catch{return msg($(msgSelector),"JSON غير صالح. تأكد أن القالب يبدأ بـ { أو [ وأنه مغلق بشكل صحيح.",true);}
-
-  // دعم الصيغتين:
-  // 1) [ {...}, {...} ]
-  // 2) { "resources": [ ... ], "foundations": [ ... ] }
-  // حتى لا يرفض الاستيراد قالب الموقع نفسه.
-  let list;
-  if(Array.isArray(parsed)) list=parsed;
-  else if(parsed && typeof parsed==="object"){
-    const key=type==="resource"?"resources":"foundations";
-    if(Array.isArray(parsed[key])) list=parsed[key];
-    else if(type==="resource" && Array.isArray(parsed.resources)) list=parsed.resources;
-    else if(type==="foundation" && Array.isArray(parsed.foundations)) list=parsed.foundations;
-    else return msg($(msgSelector),`لم أجد قائمة ${key} داخل JSON. الصيغة المقبولة: [ ... ] أو { "${key}": [ ... ] }`,true);
-  }else return msg($(msgSelector),"يجب أن يكون JSON Array أو Object يحتوي على resources/foundations.",true);
-
-  const existing=new Set(data[col].map(x=>normalizeUrl(x.url)).filter(Boolean)),batch=new Set(),valid=[];
-  let dup=0,bad=0,errors=[];
-  for(let i=0;i<list.length;i++){
-    const x=list[i],n=i+1;
-    if(!x||typeof x!=="object"){bad++;errors.push(`العنصر ${n}: ليس Object`);continue;}
-    const url=String(x.url||"").trim(),title=String(x.title||"").trim();
-    if(!title||!url){bad++;errors.push(`العنصر ${n}: العنوان أو الرابط ناقص`);continue;}
-    try{new URL(url);}catch{bad++;errors.push(`العنصر ${n}: رابط غير صالح`);continue;}
-    const nu=normalizeUrl(url);if(existing.has(nu)||batch.has(nu)){dup++;continue;}
-
-    const subjectKey=String(x.subjectId||x.subjectStableId||x.subject||"").trim();
-    const subject=data.subjects.find(s=>s.id===subjectKey||s.stableId===subjectKey||s.name===subjectKey);
-    if(!subject){bad++;errors.push(`العنصر ${n}: المادة غير موجودة (${subjectKey||"بدون subjectId"})`);continue;}
-
-    let branchIds=arr(x.branchIds).filter(Boolean);
-    if(!branchIds.length && x.branchId) branchIds=[x.branchId];
-    const resolvedBranches=branchIds.map(key=>data.branches.find(b=>b.id===String(key)||b.stableId===String(key)||b.name===String(key))?.id).filter(Boolean);
-    if(!resolvedBranches.length) branchIds=branchesOfSubject(subject); else branchIds=[...new Set(resolvedBranches)];
-    if(!branchIds.length){bad++;errors.push(`العنصر ${n}: المادة بلا فروع (${subject.name||subject.id})`);continue;}
-
-    if(type==="resource"){
-      const categoryKey=String(x.categoryId||x.categoryStableId||x.category||"").trim();
-      const category=data.categories.find(c=>c.id===categoryKey||c.stableId===categoryKey||c.name===categoryKey);
-      valid.push({title,url,subjectId:subject.id,branchIds,categoryId:category?.id||null,type:String(x.type||""),keywords:Array.isArray(x.keywords)?x.keywords:String(x.keywords||"").split(",").map(v=>v.trim()).filter(Boolean),author:String(x.author||""),order:Number(x.order)||9999,active:x.active!==false,description:String(x.description||""),stableId:slug(title),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-    }else valid.push({title,url,subjectId:subject.id,branchIds,level:x.level||"beginner",type:x.type||"lesson",keywords:Array.isArray(x.keywords)?x.keywords:String(x.keywords||"").split(",").map(v=>v.trim()).filter(Boolean),order:Number(x.order)||9999,description:String(x.description||""),stableId:slug(title),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-    batch.add(nu);
-  }
-  if(!valid.length)return msg($(msgSelector),`لا توجد عناصر صالحة. تم فحص ${list.length} عنصر. مكرر: ${dup} · غير صالح: ${bad}${errors.length?"\n\nالأسباب:\n"+errors.slice(0,12).join("\n"):""}`,true);
-  for(let i=0;i<valid.length;i+=450){const b=writeBatch(db);valid.slice(i,i+450).forEach(x=>b.set(doc(collection(db,col)),x));await b.commit();}
-  await nowLog("استيراد جماعي",col,"bulk",`تمت إضافة ${valid.length} من ${list.length}`);
-  msg($(msgSelector),`تم الاستيراد: ${valid.length}\nمكرر: ${dup}\nغير صالح: ${bad}`,false);await loadAll();
-}
+async function importItems(selector,col,msgSelector,type){if(!can("content_admin"))return msg($(msgSelector),"ليس لديك صلاحية.",true);let parsed;try{parsed=JSON.parse($(selector).value);}catch{return msg($(msgSelector),"JSON غير صالح.",true);}let list=Array.isArray(parsed)?parsed:(parsed&&Array.isArray(parsed[type==="resource"?"resources":"foundations"])?parsed[type==="resource"?"resources":"foundations"]:null);if(!list)return msg($(msgSelector),"لم يتم العثور على قائمة صالحة. استخدم Array أو كائنًا يحتوي على resources/foundations.",true);const existing=new Set(data[col].map(x=>normalizeUrl(x.url)).filter(Boolean)),batch=new Set(),valid=[];let dup=0,bad=0,errors=[];for(let i=0;i<list.length;i++){const x=list[i],n=i+1;if(!x||typeof x!=="object"){bad++;errors.push(`العنصر ${n}: ليس Object`);continue;}const url=String(x.url||"").trim();const title=String(x.title||"").trim();if(!title||!url){bad++;errors.push(`العنصر ${n}: العنوان أو الرابط ناقص`);continue;}try{new URL(url);}catch{bad++;errors.push(`العنصر ${n}: رابط غير صالح`);continue;}const nu=normalizeUrl(url);if(existing.has(nu)||batch.has(nu)){dup++;continue;}const subject=resolveSubject(x.subjectId||x.subject||x.subjectName);if(!subject){bad++;errors.push(`العنصر ${n}: المادة غير موجودة`);continue;}let branchIds=arr(x.branchIds||x.branchId).filter(Boolean).map(String);if(branchIds.length){branchIds=branchIds.map(resolveBranch).filter(Boolean);}if(!branchIds.length)branchIds=branchesOfSubject(subject);if(!branchIds.length){bad++;errors.push(`العنصر ${n}: المادة بلا فروع`);continue;}if(type==="resource"){const category=resolveCategory(x.categoryId||x.category||x.categoryName);valid.push({title,url,subjectId:subject.id,branchIds,categoryId:category?.id||null,type:String(x.type||""),keywords:Array.isArray(x.keywords)?x.keywords:String(x.keywords||"").split(",").map(v=>v.trim()).filter(Boolean),order:Number(x.order)||9999,active:x.active!==false,description:String(x.description||""),stableId:slug(title),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});}else valid.push({title,url,subjectId:subject.id,branchIds,level:x.level||"beginner",type:x.type||"lesson",keywords:Array.isArray(x.keywords)?x.keywords:String(x.keywords||"").split(",").map(v=>v.trim()).filter(Boolean),order:Number(x.order)||9999,description:String(x.description||""),stableId:slug(title),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});batch.add(nu);}if(!valid.length)return msg($(msgSelector),`لا توجد عناصر صالحة. مكرر: ${dup} · غير صالح: ${bad}\n${errors.slice(0,8).join("\n")}`,true);for(let i=0;i<valid.length;i+=450){const b=writeBatch(db);valid.slice(i,i+450).forEach(x=>b.set(doc(collection(db,col)),x));await b.commit();}await nowLog("استيراد جماعي",col,"bulk",`تمت إضافة ${valid.length} من ${list.length}`);msg($(msgSelector),`تم الاستيراد: ${valid.length}\nمكرر: ${dup}\nغير صالح: ${bad}`,false);await loadAll();}
 $("#importResources").onclick=()=>importItems("#bulkResources","resources","#bulkResourceMsg","resource"); $("#importFoundations").onclick=()=>importItems("#bulkFoundations","foundations","#bulkFoundationMsg","foundation");
 $("#adminForm").onsubmit=async e=>{e.preventDefault();if(role!=="superadmin")return;const uid=$("#adminUid").value.trim();if(!uid)return;const payload={email:$("#adminEmailInput").value.trim(),role:$("#adminRole").value,active:$("#adminActive").checked,updatedAt:serverTimestamp()};await setDoc(doc(db,"admins",uid),{...payload,createdAt:serverTimestamp()},{merge:true});await nowLog("تعديل صلاحيات","admins",uid,payload.role);$("#adminForm").classList.add("hidden");await loadAll();};
 
 $("#loginBtn").onclick=async()=>{try{await signInWithEmailAndPassword(auth,$("#email").value.trim(),$("#password").value);msg($("#loginMsg"),"تم تسجيل الدخول.");}catch(e){msg($("#loginMsg"),errorText(e),true);}}; $("#logoutBtn").onclick=()=>signOut(auth);
 
-onAuthStateChanged(auth,async user=>{if(!user){role=null;$("#loginSection").classList.remove("hidden");$("#dashboard").classList.add("hidden");return;}try{const s=await getDoc(doc(db,"admins",user.uid));if(!s.exists()||s.data().active!==true)throw Error("هذا الحساب ليس أدمن نشطًا.");role=s.data().role||"reviewer";$("#adminEmail").textContent=user.email||"الأدمن";$("#roleBadge").textContent=role;$("#loginSection").classList.add("hidden");$("#dashboard").classList.remove("hidden");await loadAll();}catch(e){await signOut(auth);msg($("#loginMsg"),errorText(e),true);}});
+onAuthStateChanged(auth,async user=>{if(!user){role=null;$("#loginSection").classList.remove("hidden");$("#dashboard").classList.add("hidden");return;}try{const s=await getDoc(doc(db,"admins",user.uid));if(!s.exists()||s.data().active!==true)throw Error("هذا الحساب ليس أدمن نشطًا.");role=s.data().role||"reviewer";$("#adminEmail").textContent=user.email||"الأدمن";$("#roleBadge").textContent=role;$("#loginSection").classList.add("hidden");$("#dashboard").classList.remove("hidden");try{await loadAll();msg($("#dashboardMsg"),"تم تحميل لوحة الإدارة.");}catch(e){console.error(e);msg($("#dashboardMsg"),"تم الدخول، لكن تعذر تحميل بعض بيانات الإدارة: "+errorText(e),true);}}catch(e){await signOut(auth);msg($("#loginMsg"),errorText(e),true);}});
