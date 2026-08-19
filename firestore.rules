@@ -1,13 +1,32 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function adminDoc() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
-    function isAdmin() { return adminDoc() && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active != false; }
-    function role() { return isAdmin() ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role : ""; }
-    function isReviewer() { return isAdmin() && (role()=="reviewer" || role()=="content_admin" || role()=="superadmin" || role()=="super_admin" || role()=="admin"); }
-    function isContentAdmin() { return isAdmin() && (role()=="content_admin" || role()=="superadmin" || role()=="super_admin" || role()=="admin"); }
-    function isSuperAdmin() { return isAdmin() && (role()=="superadmin" || role()=="super_admin" || role()=="admin"); }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    function adminRole() {
+      return isAdmin()
+        ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role
+        : "";
+    }
+
+    function isReviewer() {
+      return isAdmin() && (adminRole() == "reviewer" || adminRole() == "content_admin" || adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+    }
+
+    function isContentAdmin() {
+      return isAdmin() && (adminRole() == "content_admin" || adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+    }
+
+    function isSuperAdmin() {
+      return isAdmin() && (adminRole() == "superadmin" || adminRole() == "super_admin" || adminRole() == "admin");
+    }
 
     match /admins/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || isSuperAdmin());
@@ -15,14 +34,49 @@ service cloud.firestore {
       allow create, update: if isSuperAdmin();
       allow delete: if false;
     }
-    match /branches/{id} { allow read: if true; allow create,update,delete: if isSuperAdmin(); }
-    match /categories/{id} { allow read: if true; allow create,update,delete: if isSuperAdmin(); }
-    match /subjects/{id} { allow read: if true; allow create,update,delete: if isContentAdmin(); }
-    match /resources/{id} { allow read: if true; allow create,update,delete: if isContentAdmin(); }
-    match /foundations/{id} { allow read: if true; allow create,update,delete: if isContentAdmin(); }
-    match /suggestions/{id} { allow create: if true; allow read,update: if isReviewer(); allow delete: if false; }
-    match /adminLogs/{id} { allow read,create: if isSuperAdmin(); allow update,delete: if false; }
-    match /templates/{id} { allow read,create,update,delete: if isContentAdmin(); }
-    match /{document=**} { allow read,write: if false; }
+
+    match /branches/{branchId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow create, update, delete: if isContentAdmin();
+    }
+
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow create, update, delete: if isContentAdmin();
+    }
+
+    match /foundations/{foundationId} {
+      allow read: if true;
+      allow create, update, delete: if isContentAdmin();
+    }
+
+    match /suggestions/{suggestionId} {
+      allow create: if true;
+      allow read, update: if isReviewer();
+      allow delete: if false;
+    }
+
+    match /adminLogs/{logId} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+
+    match /templates/{templateId} {
+      allow read, create, update, delete: if isContentAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
