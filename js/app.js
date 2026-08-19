@@ -45,7 +45,7 @@ async function getResources({branch="",subject=""}={}){
   try{
     let q=collection(db,"resources");
     if(subject) q=query(q,where("subjectId","==",subject),limit(300));
-    else if(branch) q=query(q,where("branchIds","array-contains",branch),limit(300));
+    else if(branch) q=query(q,where("branchId","==",branch),limit(300));
     else q=query(q,limit(300));
     const snap=await getDocs(q); const data=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order??9999)-(b.order??9999)||String(a.title||"").localeCompare(String(b.title||""),"ar"));
     localStorage.setItem(key,JSON.stringify(data)); return data;
