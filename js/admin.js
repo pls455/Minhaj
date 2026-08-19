@@ -248,33 +248,27 @@ function normalizeImportURL(value) {
 ========================================================= */
 
 async function loadRole(user) {
+  const adminRef = doc(db, "admins", user.uid);
+  const snap = await getDoc(adminRef);
 
-  const adminRef =
-    doc(
-      db,
-      "admins",
-      user.uid
-    );
+  if (!snap.exists()) throw new Error("NO_ADMIN");
 
-  const snap =
-    await getDoc(adminRef);
+  const data = snap.data() || {};
+  if (data.active === false) throw new Error("ADMIN_DISABLED");
 
-  if (
-    !snap.exists() ||
-    snap.data().active !== true
-  ) {
+  const rawRole = String(data.role || data.permission || "reviewer").trim().toLowerCase();
+  const normalizedRole = ({
+    admin: "superadmin",
+    super_admin: "superadmin",
+    superadmin: "superadmin",
+    contentadmin: "content_admin",
+    content_admin: "content_admin",
+    reviewer: "reviewer"
+  })[rawRole] || rawRole;
 
-    throw new Error(
-      "NO_ADMIN"
-    );
-  }
-
-  return (
-    snap.data().role ||
-    "reviewer"
-  );
+  if (!roleLevel[normalizedRole]) throw new Error("INVALID_ADMIN_ROLE");
+  return normalizedRole;
 }
-
 
 /* =========================================================
    LOAD COLLECTION
