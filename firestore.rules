@@ -223,21 +223,15 @@ service cloud.firestore {
     }
 
 
-    /* =====================================================
-       ADMIN LOGS
-    ===================================================== */
+
     match /adminLogs/{logId} {
       allow read, create: if isSuperAdmin();
       allow update, delete: if false;
     }
 
-    /* =====================================================
-       TEMPLATES
-    ===================================================== */
     match /templates/{templateId} {
       allow read, create, update, delete: if isContentAdmin();
     }
-
 
     /* =====================================================
        DEFAULT DENY
