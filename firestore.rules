@@ -120,11 +120,7 @@ service cloud.firestore {
     ===================================================== */
     match /branches/{branchId} {
       allow read: if true;
-      allow create: if isSuperAdmin()
-        && request.resource.data.uid is string;
-      allow update: if isSuperAdmin()
-        && resource.data.uid is string
-        && request.resource.data.uid == resource.data.uid;
+      allow create, update: if isSuperAdmin();
       allow delete: if isSuperAdmin();
     }
 
@@ -153,9 +149,7 @@ service cloud.firestore {
       /*
        * Content Admin أو Super Admin.
        */
-      allow create: if isContentAdmin() && request.resource.data.uid is string;
-      allow update: if isContentAdmin()
-        && (!resource.data.keys().hasAny(["uid"]) || request.resource.data.uid == resource.data.uid);
+      allow create, update: if isContentAdmin();
       allow delete: if isContentAdmin();
     }
 
@@ -226,6 +220,22 @@ service cloud.firestore {
        * لا نحذف الاقتراحات.
        */
       allow delete: if false;
+    }
+
+
+    /* =====================================================
+       ADMIN LOGS
+    ===================================================== */
+    match /adminLogs/{logId} {
+      allow read, create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+
+    /* =====================================================
+       TEMPLATES
+    ===================================================== */
+    match /templates/{templateId} {
+      allow read, create, update, delete: if isContentAdmin();
     }
 
 
