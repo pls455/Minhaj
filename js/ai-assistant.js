@@ -1,0 +1,64 @@
+import { db } from './firebase.js';
+import { collection, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+const AI_API_URL = 'https://json2.karamhahhss123.workers.dev/api/ai';
+const cacheKey = 'minhaj:ai:resources:v1';
+const esc = v => String(v ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+const safeUrl = v => { try { const u = new URL(String(v || '')); return /^https?:$/.test(u.protocol) ? u.href : '#'; } catch { return '#'; } };
+const text = x => [x?.title,x?.name,x?.description,x?.type,x?.category,x?.keywords,x?.tags,x?.author].flat(Infinity).filter(Boolean).join(' ').toLowerCase();
+const terms = s => String(s || '').toLowerCase().replace(/[؟?!.,،؛:()\[\]{}"'`]/g,' ').split(/\s+/).filter(x => x.length > 1);
+
+async function getResources() {
+  try {
+    const snap = await getDocs(query(collection(db,'resources'), limit(500)));
+    const rows = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(x => x.active !== false);
+    localStorage.setItem(cacheKey, JSON.stringify(rows));
+    return rows;
+  } catch {
+    try { return JSON.parse(localStorage.getItem(cacheKey) || '[]'); } catch { return []; }
+  }
+}
+
+function shortlist(rows, question) {
+  const qs = terms(question);
+  return rows.map((r, index) => {
+    const hay = text(r);
+    let score = 0;
+    for (const term of qs) {
+      if (hay.includes(term)) score += term.length >= 5 ? 3 : 1;
+    }
+    if (/أدبي|ادبي|literary/.test(question) && /أدبي|ادبي|literary/.test(hay)) score += 6;
+    if (/علمي|scientific/.test(question) && /علمي|scientific/.test(hay)) score += 6;
+    if (/صناعي|industrial/.test(question) && /صناعي|industrial/.test(hay)) score += 6;
+    return { r, score, index };
+  }).sort((a,b) => b.score-a.score || a.index-b.index).slice(0,30).map(({r}) => ({
+    id: r.id,
+    title: r.title || r.name || 'مصدر',
+    description: r.description || '',
+    type: r.type || '',
+    category: r.category || '',
+    branchId: r.branchId || '',
+    branchIds: Array.isArray(r.branchIds) ? r.branchIds : [],
+    subjectId: r.subjectId || ''
+  }));
+}
+
+function addStyles() {
+  if (document.getElementById('minhaj-ai-style')) return;
+  const s = document.createElement('style'); s.id='minhaj-ai-style'; s.textContent=`
+  .minhaj-ai-fab{position:fixed;left:18px;bottom:18px;z-index:9999;border:1px solid rgba(255,255,255,.14);background:#101629;color:#fff;border-radius:999px;padding:12px 16px;box-shadow:0 12px 35px rgba(0,0,0,.3);cursor:pointer;font:600 14px system-ui}.minhaj-ai-panel{position:fixed;left:14px;bottom:72px;width:min(390px,calc(100vw - 28px));height:min(600px,72vh);z-index:9998;background:#0c1120;color:#eef2ff;border:1px solid rgba(255,255,255,.12);border-radius:20px;box-shadow:0 25px 70px rgba(0,0,0,.45);display:none;overflow:hidden;font-family:system-ui}.minhaj-ai-panel.open{display:flex;flex-direction:column}.minhaj-ai-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08)}.minhaj-ai-head strong{font-size:15px}.minhaj-ai-close{background:none;border:0;color:#aab2c5;font-size:22px;cursor:pointer}.minhaj-ai-messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}.minhaj-ai-msg{max-width:88%;padding:10px 12px;border-radius:14px;line-height:1.65;font-size:14px;white-space:pre-wrap}.minhaj-ai-msg.user{align-self:flex-start;background:#263451}.minhaj-ai-msg.bot{align-self:flex-end;background:#151d31}.minhaj-ai-input{display:flex;gap:8px;padding:10px;border-top:1px solid rgba(255,255,255,.08)}.minhaj-ai-input textarea{flex:1;resize:none;min-height:44px;max-height:100px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#080c17;color:#fff;padding:10px;font:inherit}.minhaj-ai-input button{width:48px;border:0;border-radius:12px;background:#4b67ff;color:#fff;cursor:pointer}.minhaj-ai-resource{display:block;margin-top:8px;padding:10px;border-radius:12px;background:#202b48;color:#fff;text-decoration:none}.minhaj-ai-note{font-size:11px;color:#8f9ab0;text-align:center;padding:0 12px 8px}`; document.head.appendChild(s);
+}
+
+function createUI() {
+  addStyles();
+  const fab=document.createElement('button'); fab.className='minhaj-ai-fab'; fab.textContent='✦ مساعد منهاج';
+  const panel=document.createElement('section'); panel.className='minhaj-ai-panel'; panel.innerHTML=`<div class="minhaj-ai-head"><strong>✦ مساعد منهاج</strong><button class="minhaj-ai-close" aria-label="إغلاق">×</button></div><div class="minhaj-ai-messages"></div><div class="minhaj-ai-note">يساعدك في الدراسة ويبحث داخل مصادر منهاج. لا يخترع روابط.</div><form class="minhaj-ai-input"><textarea placeholder="مثال: بدي رابط ملزمة الكامل للفرع الأدبي"></textarea><button>↑</button></form>`;
+  document.body.append(fab,panel);
+  const messages=panel.querySelector('.minhaj-ai-messages'), form=panel.querySelector('form'), input=panel.querySelector('textarea');
+  const add=(html,cls)=>{const d=document.createElement('div');d.className=`minhaj-ai-msg ${cls}`;d.innerHTML=html;messages.appendChild(d);messages.scrollTop=messages.scrollHeight;return d};
+  fab.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open')&&!messages.children.length)add('اسألني عن الدراسة أو عن أي مصدر موجود في منهاج.','bot');};
+  panel.querySelector('.minhaj-ai-close').onclick=()=>panel.classList.remove('open');
+  form.onsubmit=async e=>{e.preventDefault();const q=input.value.trim();if(!q)return;input.value='';add(esc(q),'user');const loading=add('جاري البحث...','bot');try{const rows=await getResources();const candidate=shortlist(rows,q);const resourceIntent=/رابط|ملزمة|ملزمة|كتاب|ملخص|ملزمة|مصدر|ملفات|حلول|امتحان|رزمة|مذكرة/i.test(q);if(resourceIntent){const r=await fetch(AI_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'resource',messages:[{role:'user',content:q}],candidates:candidate})});const data=await r.json();if(data.action==='open_resource'){const found=rows.find(x=>x.id===data.resourceId);if(found){const url=safeUrl(found.url);loading.innerHTML=`وجدت أقرب مورد: <strong>${esc(found.title||found.name||'المصدر')}</strong>${found.description?`<br><small>${esc(found.description)}</small>`:''}${url!=='#'?`<a class="minhaj-ai-resource" href="${esc(url)}" target="_blank" rel="noopener noreferrer">فتح الرابط ↗</a>`:''}`;return;}}loading.textContent='ما لقيت موردًا مطابقًا بشكل موثوق داخل منهاج.';return;}const r=await fetch(AI_API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'study',messages:[{role:'user',content:q}]})});const data=await r.json();loading.textContent=data.answer||'تعذر الحصول على إجابة حاليًا.';}catch(err){console.error(err);loading.textContent='تعذر الاتصال بمساعد منهاج حاليًا.';}};
+}
+
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',createUI); else createUI();
