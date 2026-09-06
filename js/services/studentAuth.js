@@ -22,15 +22,19 @@ export async function registerStudent({name,email,password,identityNumber=''}){
   if(safeIdentity && !/^[0-9]{4,32}$/.test(safeIdentity)) throw Error('STUDENT_ID_INVALID');
   const credential=await createUserWithEmailAndPassword(auth,safeEmail,password);
   if(safeName) await updateProfile(credential.user,{displayName:safeName});
-  await setDoc(doc(db,USERS,credential.user.uid),{
-    name:safeName,
-    email:safeEmail,
-    role:'student',
-    identityNumber:safeIdentity||null,
-    createdAt:serverTimestamp(),
-    lastLoginAt:serverTimestamp(),
-    updatedAt:serverTimestamp()
-  });
+  try{
+    await setDoc(doc(db,USERS,credential.user.uid),{
+      name:safeName,
+      email:safeEmail,
+      role:'student',
+      identityNumber:safeIdentity||null,
+      createdAt:serverTimestamp(),
+      lastLoginAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    });
+  }catch(error){
+    console.warn('[studentAuth] profile creation failed after successful auth:',error);
+  }
   return credential.user;
 }
 
@@ -38,13 +42,17 @@ export async function loginStudent(email,password){
   const safeEmail=clean(email).toLowerCase();
   if(!safeEmail||!password) throw Error('STUDENT_LOGIN_REQUIRED');
   const credential=await signInWithEmailAndPassword(auth,safeEmail,password);
-  await setDoc(doc(db,USERS,credential.user.uid),{
-    name:credential.user.displayName||safeEmail.split('@')[0],
-    email:credential.user.email||safeEmail,
-    role:'student',
-    lastLoginAt:serverTimestamp(),
-    updatedAt:serverTimestamp()
-  },{merge:true});
+  try{
+    await setDoc(doc(db,USERS,credential.user.uid),{
+      name:credential.user.displayName||safeEmail.split('@')[0],
+      email:credential.user.email||safeEmail,
+      role:'student',
+      lastLoginAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+  }catch(error){
+    console.warn('[studentAuth] profile sync failed after successful login:',error);
+  }
   return credential.user;
 }
 
@@ -52,8 +60,13 @@ export async function logoutStudent(){ await signOut(auth); }
 
 export async function getStudentProfile(uid=auth.currentUser?.uid){
   if(!uid) return null;
-  const snap=await getDoc(doc(db,USERS,uid));
-  return snap.exists()?{id:snap.id,...snap.data()}:null;
+  try{
+    const snap=await getDoc(doc(db,USERS,uid));
+    return snap.exists()?{id:snap.id,...snap.data()}:null;
+  }catch(error){
+    console.warn('[studentAuth] profile read failed:',error);
+    return null;
+  }
 }
 
 export async function saveStudentProfile({name,identityNumber=''}){
