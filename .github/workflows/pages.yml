@@ -2,6 +2,8 @@ name: Deploy static site to GitHub Pages
 
 on:
   push:
+    branches: [main, admin-hardening-2026-09]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -37,6 +39,7 @@ jobs:
           node --check src/index.js
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
     environment:
