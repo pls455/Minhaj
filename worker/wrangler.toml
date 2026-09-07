@@ -5,6 +5,7 @@ compatibility_date = "2026-08-29"
 [vars]
 GEMINI_MODEL = "gemini-3.6-flash"
 ALLOWED_ORIGINS = "https://pls455.github.io"
+FIREBASE_PROJECT_ID = "minhaj-1be6f"
 
 # Cloudflare Rate Limiting API: 20 AI requests per minute per key.
 [[ratelimits]]
@@ -15,5 +16,7 @@ namespace_id = "1001"
   limit = 20
   period = 60
 
-# Set the secret separately:
+# Required secrets. Never commit their values:
 # wrangler secret put GEMINI_API_KEY
+# wrangler secret put GOOGLE_DRIVE_API_KEY
+# wrangler secret put FIREBASE_WEB_API_KEY
