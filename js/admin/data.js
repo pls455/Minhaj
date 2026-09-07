@@ -1,10 +1,16 @@
-import { getPage, getAllSmall, saveResource, saveSourceRegistry, removeResource, count } from '../repositories/resourceRepository.js';
+import { getPage, saveResource, saveSourceRegistry, removeResource, count } from '../repositories/resourceRepository.js';
 import { logAction } from './audit.js';
 import { currentAdmin, hasRole, ROLES } from '../services/firebase/adminCore.js';
 import { db } from '../services/firebase.js';
 import { collection, deleteDoc, doc, addDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
-export const configs = {
+const PAGE_SIZE = 20;
+const MAX_NAME = 200;
+const MAX_DESCRIPTION = 5000;
+const MAX_ARRAY = 100;
+const STABLE_ID_RE = /^[a-z0-9\u0600-\u06ff][a-z0-9\u0600-\u06ff_-]{1,63}$/;
+
+export const configs = Object.freeze({
   branches:{label:'الفروع',role:ROLES.SUPER_ADMIN,searchField:'name',fields:{name:'text',description:'textarea',icon:'text',order:'number',active:'checkbox'}},
   subjects:{label:'المواد',role:ROLES.CONTENT_ADMIN,searchField:'name',fields:{name:'text',branchIds:'ids',description:'textarea',icon:'text',order:'number',active:'checkbox'}},
   categories:{label:'التصنيفات',role:ROLES.SUPER_ADMIN,searchField:'name',fields:{name:'text',description:'textarea',icon:'text',order:'number',active:'checkbox'}},
@@ -18,19 +24,79 @@ export const configs = {
   problemReports:{label:'البلاغات',role:ROLES.REVIEWER,writeRole:ROLES.REVIEWER,searchField:'sourceTitle',orderField:'createdAt',fields:{sourceId:'text',sourceTitle:'text',sourceUrl:'url',kind:'text',description:'textarea',status:'text',adminNote:'textarea'}},
   admins:{label:'المشرفون',role:ROLES.SUPER_ADMIN,searchField:'email',orderField:'createdAt',fields:{email:'email',role:'text',active:'checkbox'}},
   adminLogs:{label:'سجل الإدارة',role:ROLES.SUPER_ADMIN,readOnly:true,searchField:'collection',orderField:'createdAt',fields:{action:'text',collection:'text',targetId:'text',details:'textarea',adminUid:'text',adminEmail:'email',role:'text'}}
-};
+});
 
-const errorMap={RESOURCE_TITLE_REQUIRED:'يرجى إدخال عنوان المصدر.',RESOURCE_URL_REQUIRED:'يرجى إدخال رابط المصدر.',RESOURCE_URL_INVALID:'رابط المصدر غير صالح.',RESOURCE_URL_PROTOCOL:'رابط المصدر يجب أن يبدأ بـ http أو https.',RESOURCE_BRANCH_REQUIRED:'يرجى اختيار فرع واحد على الأقل.',RESOURCE_SUBJECT_REQUIRED:'يرجى اختيار المادة.',RESOURCE_URL_DUPLICATE:'هذا الرابط موجود مسبقًا.',RESOURCE_NOT_FOUND:'المصدر غير موجود.'};
+const errorMap={
+  RESOURCE_TITLE_REQUIRED:'يرجى إدخال عنوان المصدر.',RESOURCE_URL_REQUIRED:'يرجى إدخال رابط المصدر.',RESOURCE_URL_INVALID:'رابط المصدر غير صالح.',RESOURCE_URL_PROTOCOL:'رابط المصدر يجب أن يبدأ بـ http أو https.',RESOURCE_BRANCH_REQUIRED:'يرجى اختيار فرع واحد على الأقل.',RESOURCE_SUBJECT_REQUIRED:'يرجى اختيار المادة.',RESOURCE_URL_DUPLICATE:'هذا الرابط موجود مسبقًا.',RESOURCE_NOT_FOUND:'المصدر غير موجود.',
+  ADMIN_NAME_REQUIRED:'الاسم مطلوب.',ADMIN_NAME_TOO_LONG:'الاسم طويل جدًا.',ADMIN_DESCRIPTION_TOO_LONG:'الوصف طويل جدًا.',CATEGORY_STABLE_ID_REQUIRED:'المعرّف الثابت للتصنيف مطلوب.',CATEGORY_STABLE_ID_INVALID:'المعرّف الثابت غير صالح.',CATEGORY_STABLE_ID_DUPLICATE:'المعرّف الثابت مستخدم مسبقًا.'
+};
 export function friendlyError(e){const key=e?.message||e?.code||'';return errorMap[key]||key||'تعذر تنفيذ العملية، حاول مرة أخرى.'}
 let state={collection:'branches',cursor:null,admin:null};
-export function setAdmin(a){state.admin=a} export function getAdmin(){return state.admin}
+export function setAdmin(a){state.admin=a}
+export function getAdmin(){return state.admin}
 export function allowed(c){return !!state.admin&&hasRole(state.admin.role,configs[c]?.role||ROLES.REVIEWER)}
 export function canWrite(c){const cfg=configs[c];return allowed(c)&&!cfg.readOnly&&hasRole(state.admin.role,cfg.writeRole||cfg.role)}
-export async function loadPage(c,filters={}){const cfg=adminApiConfig(c);if(!filters.search&&['branches','subjects','categories'].includes(c)){const rows=await getAllSmall(c,100,true);return{rows,nextCursor:null,hasMore:false};}return getPage(c,{...filters,searchField:cfg.searchField,orderField:cfg.orderField},20,state.cursor)}
-function adminApiConfig(c){return configs[c]||{label:c,role:ROLES.REVIEWER,searchField:'name'};}
-export async function persist(c,id,payload){const actor=await currentAdmin();if(!actor||!hasRole(actor.role,configs[c]?.role||ROLES.REVIEWER)||configs[c]?.readOnly)throw Error('ليس لديك صلاحية للكتابة');const next={...payload};if(['branches','subjects','categories'].includes(c)&&!next.stableId&&next.name){next.stableId=String(next.name).trim().toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,'-').replace(/^-|-$/g,'')||`item-${Date.now()}`;}let saved;if(c==='resources'){saved=await saveResource(id||null,next);return saved;}if(c==='sourceRegistry'){saved=await saveSourceRegistry(id||null,next);}else if(id){await updateDoc(doc(db,c,id),{...next,updatedAt:serverTimestamp()});saved=id;}else{const r=await addDoc(collection(db,c),{...next,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});saved=r.id;}try{await logAction(actor,id?'update':'create',c,saved,next.title||next.name||next.question||next.email||next.sourceId||'')}catch(error){console.warn('[admin.persist.audit]',error)}return saved}
-export async function erase(c,id){const actor=await currentAdmin();const cfg=configs[c];if(!actor||!cfg||cfg.readOnly||!hasRole(actor.role,cfg.writeRole||cfg.role))throw Error('ليس لديك صلاحية للحذف');if(!id||typeof id!=='string'||id.length>128)throw Error('معرّف العنصر غير صالح');if(c==='resources'){await removeResource(id);return;}await deleteDoc(doc(db,c,id));try{await logAction(actor,'delete',c,id,'')}catch(error){console.warn('[admin.erase.audit]',error)}}
+
+export async function loadPage(c,filters={}){
+  const cfg=configs[c];
+  if(!cfg) throw Error('UNSUPPORTED_ADMIN_COLLECTION');
+  const page=await getPage(c,{...filters,searchField:cfg.searchField,orderField:cfg.orderField||'order'},PAGE_SIZE,state.cursor);
+  return page;
+}
+
+function normalizeIds(value){return Array.isArray(value)?[...new Set(value.map(v=>String(v).trim()).filter(Boolean))].slice(0,MAX_ARRAY):String(value??'').split(',').map(v=>v.trim()).filter(Boolean).slice(0,MAX_ARRAY)}
+function cleanGeneric(c,input){
+  const cfg=configs[c];
+  if(!cfg) throw Error('UNSUPPORTED_ADMIN_COLLECTION');
+  const out={};
+  for(const [key,type] of Object.entries(cfg.fields)){
+    const value=input?.[key];
+    if(type==='checkbox') out[key]=value===true;
+    else if(type==='number'){const n=Number(value);if(!Number.isInteger(n)||n<0)throw Error('الترتيب يجب أن يكون رقمًا صحيحًا غير سالب');out[key]=n}
+    else if(type==='ids') out[key]=normalizeIds(value);
+    else out[key]=String(value??'').trim();
+  }
+  const name=out.name||out.title||out.question||out.email||out.sourceTitle;
+  if(['branches','subjects','categories'].includes(c)&&!name)throw Error('ADMIN_NAME_REQUIRED');
+  if(name&&name.length>MAX_NAME)throw Error('ADMIN_NAME_TOO_LONG');
+  if(out.description&&out.description.length>MAX_DESCRIPTION)throw Error('ADMIN_DESCRIPTION_TOO_LONG');
+  if(c==='categories'){
+    out.stableId=String(out.stableId||out.name||'').trim().toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,'-').replace(/^-|-$/g,'').slice(0,64);
+    if(!out.stableId||!STABLE_ID_RE.test(out.stableId))throw Error('CATEGORY_STABLE_ID_INVALID');
+  }
+  if(['resources','foundations'].includes(c)&&out.url){try{const u=new URL(out.url);if(!['http:','https:'].includes(u.protocol))throw 0}catch{throw Error('RESOURCE_URL_INVALID')}}
+  return out;
+}
+
+async function ensureCategoryStableIdUnique(stableId,exceptId=null){
+  const page=await getPage('categories',{search:stableId,searchField:'stableId',orderField:'stableId'},50,null);
+  if(page.rows.some(d=>d.id!==exceptId&&String(d.stableId||'')===stableId))throw Error('CATEGORY_STABLE_ID_DUPLICATE');
+}
+
+export async function persist(c,id,payload){
+  const actor=await currentAdmin();
+  if(!actor||!canWriteForActor(actor,c))throw Error('ليس لديك صلاحية للكتابة');
+  if(configs[c]?.readOnly)throw Error('هذا القسم للقراءة فقط');
+  if(c==='resources')return saveResource(id||null,payload);
+  if(c==='sourceRegistry')return saveSourceRegistry(id||null,payload);
+  const next=cleanGeneric(c,payload);
+  if(c==='categories')await ensureCategoryStableIdUnique(next.stableId,id||null);
+  let saved;
+  if(id){await updateDoc(doc(db,c,id),{...next,updatedAt:serverTimestamp()});saved=id}
+  else{const r=await addDoc(collection(db,c),{...next,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});saved=r.id}
+  try{await logAction(actor,id?'update':'create',c,saved,next.title||next.name||next.question||next.email||next.sourceId||'')}catch(error){console.warn('[admin.persist.audit]',error)}
+  return saved;
+}
+function canWriteForActor(actor,c){const cfg=configs[c];return !!cfg&&!cfg.readOnly&&hasRole(actor.role,cfg.writeRole||cfg.role)}
+export async function erase(c,id){const actor=await currentAdmin();const cfg=configs[c];if(!actor||!cfg||cfg.readOnly||!canWriteForActor(actor,c))throw Error('ليس لديك صلاحية للحذف');if(!id||typeof id!=='string'||id.length>128)throw Error('معرّف العنصر غير صالح');if(c==='resources')return removeResource(id);await deleteDoc(doc(db,c,id));try{await logAction(actor,'delete',c,id,'')}catch(error){console.warn('[admin.erase.audit]',error)}}
 export async function stats(){const names=['branches','subjects','categories','resources','foundations','suggestions','problemReports'];const out={};await Promise.all(names.map(async n=>{const f=n==='suggestions'?{status:'pending'}:n==='problemReports'?{status:'open'}:{};try{out[n]=await count(n,f)}catch(e){console.warn('[admin.stats]',n,e);out[n]=0}}));return out}
-export function toPayload(c,form){const p={};for(const[key,type]of Object.entries(configs[c].fields)){const el=form.elements[key];if(!el)continue;if(type==='checkbox')p[key]=el.checked;else if(type==='number'){const n=Number(el.value);if(!Number.isInteger(n)||n<0)throw Error('الترتيب يجب أن يكون رقمًا صحيحًا غير سالب');p[key]=n}else if(type==='ids')p[key]=el.multiple?[...el.selectedOptions].map(o=>o.value).filter(Boolean):el.value.split(',').map(x=>x.trim()).filter(Boolean);else{const value=el.value.trim();if(key==='url'&&value){try{const u=new URL(value);if(!['http:','https:'].includes(u.protocol))throw 0}catch{throw Error('الرابط يجب أن يبدأ بـ http أو https')}}p[key]=value;}}if(c==='flashcards'){if(!p.question||p.question.length<2)throw Error('السؤال مطلوب ويجب أن يحتوي على حرفين على الأقل');if(!p.answer)throw Error('الإجابة مطلوبة');if(p.question.length>5000||p.answer.length>10000||(p.explanation||'').length>10000)throw Error('محتوى البطاقة أطول من الحد المسموح');}if(c==='suggestions'){if(!p.title||p.title.length<3)throw Error('عنوان الاقتراح مطلوب');if((p.description||'').length>5000)throw Error('الاقتراح طويل جدًا')}if(c==='problemReports'){if(!p.description||p.description.length<5)throw Error('وصف البلاغ مطلوب');if(p.description.length>2000)throw Error('البلاغ طويل جدًا')}if(c==='templates'){if(!p.name||p.name.length<2)throw Error('اسم القالب مطلوب');if(!p.target)throw Error('يجب تحديد هدف القالب');if(p.fields.length>100)throw Error('عدد حقول القالب كبير جدًا');if(p.instructions.length>100)throw Error('عدد تعليمات القالب كبير جدًا')}if(c==='sourceRegistry'){if(!p.sourceId)p.sourceId='source-'+Date.now();if(!p.name&&!p.title)throw Error('اسم المصدر مطلوب');if(p.status&&!['pending_review','published','rejected','approved','pending','indexed','ready','error','archived'].includes(p.status))throw Error('حالة المصدر غير صالحة')}return p}
-export function initialValue(type,v){if(type==='checkbox')return!!v;if(type==='ids')return Array.isArray(v)?v.join(', '):String(v||'');return String(v??'');}
-export{state};
+export function toPayload(c,form){const p={};for(const[key,type]of Object.entries(configs[c].fields)){const el=form.elements[key];if(!el)continue;if(type==='checkbox')p[key]=el.checked;else if(type==='number'){const n=Number(el.value);if(!Number.isInteger(n)||n<0)throw Error('الترتيب يجب أن يكون رقمًا صحيحًا غير سالب');p[key]=n}else if(type==='ids')p[key]=el.multiple?[...el.selectedOptions].map(o=>o.value).filter(Boolean):normalizeIds(el.value);else{const value=el.value.trim();if(type==='url'&&value){try{const u=new URL(value);if(!['http:','https:'].includes(u.protocol))throw 0}catch{throw Error('RESOURCE_URL_INVALID')}}p[key]=value;}}
+  if(c==='flashcards'){if(!p.question||p.question.length<2)throw Error('السؤال مطلوب ويجب أن يحتوي على حرفين على الأقل');if(!p.answer)throw Error('الإجابة مطلوبة')}
+  if(c==='suggestions'&&!p.title)throw Error('عنوان الاقتراح مطلوب');
+  if(c==='problemReports'&&!p.description)throw Error('وصف البلاغ مطلوب');
+  if(c==='templates'){if(!p.name||!p.target)throw Error('بيانات القالب ناقصة')}
+  if(c==='sourceRegistry'){if(!p.sourceId)p.sourceId=`source-${Date.now()}`;if(!p.name&&!p.title)throw Error('اسم المصدر مطلوب')}
+  return p;
+}
+export function initialValue(type,v){if(type==='checkbox')return!!v;if(type==='ids')return Array.isArray(v)?v.join(', '):String(v||'');return String(v??'')}
+export {state};
