@@ -5,7 +5,7 @@ import { getPage } from '../repositories/resourceRepository.js';
 import { getCurrentIdToken } from '../services/firebase/auth.js';
 
 const FOLDER='application/vnd.google-apps.folder',DOC='application/vnd.google-apps.document',SHEET='application/vnd.google-apps.spreadsheet';
-const CONTENT_LIMIT=12000,WORKER=window.MINHAJ_AI_URL||'';$=id=>document.getElementById(id);
+const CONTENT_LIMIT=12000,WORKER=window.MINHAJ_AI_URL||'', $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 let refs={branches:[],subjects:[],categories:[]},files=[];
 const msg=(text,error=false)=>{const e=$('driveMsg');if(e){e.textContent=text;e.className=text?`message ${error?'error':'success'}`:'message'}};
