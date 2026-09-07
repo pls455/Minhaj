@@ -15,5 +15,6 @@ namespace_id = "1001"
   limit = 20
   period = 60
 
-# Set the secret separately:
+# Secrets are configured outside source control:
 # wrangler secret put GEMINI_API_KEY
+# wrangler secret put GOOGLE_DRIVE_API_KEY
