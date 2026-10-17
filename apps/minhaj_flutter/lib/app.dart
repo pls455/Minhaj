@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'core/config/firebase_config.dart';
 import 'features/admin/presentation/admin_page.dart';
+import 'features/assistant/presentation/assistant_page.dart';
+import 'features/library/presentation/library_page.dart';
 import 'features/auth/presentation/profile_page.dart';
 import 'features/branches/presentation/branches_page.dart';
 import 'features/cards/presentation/flashcards_page.dart';
@@ -22,6 +24,9 @@ final _router = GoRouter(
         GoRoute(path: '/', builder: (context, state) => const HomePage()),
         GoRoute(path: '/branches', builder: (context, state) => const BranchesPage()),
         GoRoute(path: '/resources', builder: (context, state) => ResourcesPage(initialBranchId: state.uri.queryParameters['branchId'])),
+        GoRoute(path: '/foundations', builder: (context, state) => const LibraryPage(collectionName: 'foundations', title: 'التأسيس')),
+        GoRoute(path: '/solutions', builder: (context, state) => const LibraryPage(collectionName: 'solutions', title: 'الحلول')),
+        GoRoute(path: '/assistant', builder: (context, state) => const AssistantPage()),
         GoRoute(path: '/cards', builder: (context, state) => const FlashcardsPage()),
         GoRoute(path: '/cards/:setId', builder: (context, state) => FlashcardsPage(setId: state.pathParameters['setId'])),
         GoRoute(path: '/tests', builder: (context, state) => const TestsPage()),
