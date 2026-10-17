@@ -150,7 +150,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
           const SizedBox(height: 8),
           TextField(controller: answer, maxLength: 8000, maxLines: 4, decoration: const InputDecoration(labelText: 'الإجابة أو الشرح')),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(value: difficulty, decoration: const InputDecoration(labelText: 'الصعوبة'),
+          DropdownButtonFormField<String>(initialValue: difficulty, decoration: const InputDecoration(labelText: 'الصعوبة'),
             items: const [DropdownMenuItem(value: 'سهل', child: Text('سهل')), DropdownMenuItem(value: 'متوسط', child: Text('متوسط')), DropdownMenuItem(value: 'صعب', child: Text('صعب'))],
             onChanged: (value) { if (value != null) setDialogState(() => difficulty = value); }),
         ])),
