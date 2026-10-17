@@ -287,10 +287,92 @@ class _ReviewQueueState extends State<_ReviewQueue> {
     final snapshot = await FirebaseFirestore.instance.collection('suggestions').where('status', isEqualTo: 'pending').limit(50).get();
     return snapshot.docs;
   }
-  Future<void> _review(QueryDocumentSnapshot<Map<String, dynamic>> doc, String status) async {
+  Future<void> _review(QueryDocumentSnapshot<Map<String, dynamic>> suggestion, String status) async {
     try {
-      await doc.reference.update({'status': status, 'reviewedBy': widget.user.uid, 'updatedAt': FieldValue.serverTimestamp()});
-      if (mounted) setState(() => _future = _load());
+      final db = FirebaseFirestore.instance;
+      final data = suggestion.data();
+      final batch = db.batch();
+      String? publishedId;
+      String? publishedCollection;
+
+      if (status == 'approved' && widget.canPublish) {
+        final contentType = (data['contentType'] ?? 'resource').toString();
+        final title = (data['title'] ?? '').toString().trim();
+        final branchId = (data['branchId'] ?? '').toString().trim();
+        final subjectId = (data['subjectId'] ?? '').toString().trim();
+        if (title.isEmpty || branchId.isEmpty || subjectId.isEmpty) {
+          throw StateError('الاقتراح ناقص العنوان أو الفرع أو المادة.');
+        }
+
+        String collectionName = 'resources';
+        if (contentType == 'foundation') collectionName = 'foundations';
+        if (contentType == 'flashcard') collectionName = 'flashcards';
+
+        final target = db.collection(collectionName).doc();
+        final common = <String, dynamic>{
+          'title': title,
+          'description': (data['description'] ?? '').toString(),
+          'branchId': branchId,
+          'branchIds': <String>[branchId],
+          'subjectId': subjectId,
+          'order': 0,
+          'active': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'sourceSuggestionId': suggestion.id,
+        };
+
+        if (contentType == 'flashcard') {
+          final question = (data['question'] ?? '').toString().trim();
+          final answer = (data['answer'] ?? '').toString().trim();
+          if (question.isEmpty || answer.isEmpty || question.length > 4000 || answer.length > 8000) {
+            throw StateError('بيانات البطاقة غير مكتملة أو تتجاوز الحد المسموح.');
+          }
+          batch.set(target, {
+            ...common,
+            'question': question,
+            'answer': answer,
+            'explanation': '',
+          });
+        } else {
+          final url = (data['url'] ?? '').toString().trim();
+          final uri = Uri.tryParse(url);
+          if (uri == null || !['https', 'http'].contains(uri.scheme) || uri.host.isEmpty) {
+            throw StateError('رابط المصدر غير صالح.');
+          }
+          batch.set(target, {
+            ...common,
+            'url': url,
+            'type': (data['type'] ?? 'link').toString(),
+            'keywords': data['keywords'] is List ? data['keywords'] : <String>[],
+            'tags': <String>[],
+            'author': (data['studentName'] ?? '').toString(),
+            'categoryId': '',
+          });
+        }
+        publishedId = target.id;
+        publishedCollection = collectionName;
+      } else if (status == 'approved' && !widget.canPublish) {
+        throw StateError('صلاحية نشر المصادر متاحة لمدير المحتوى أو المدير الأعلى فقط.');
+      }
+
+      batch.update(suggestion.reference, {
+        'status': status,
+        'reviewerUid': widget.user.uid,
+        'reviewerEmail': widget.user.email ?? '',
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (publishedId != null) 'publishedResourceId': publishedId,
+        if (publishedCollection != null) 'publishedCollection': publishedCollection,
+      });
+      await batch.commit();
+      if (mounted) {
+        final message = status == 'approved' && publishedId != null
+            ? 'تم اعتماد الاقتراح ونشره ضمن ' + publishedCollection!
+            : 'تم تحديث حالة الاقتراح.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        setState(() => _future = _load());
+      }
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
     }
@@ -316,9 +398,9 @@ class _ReviewQueueState extends State<_ReviewQueue> {
             subtitle: Text((data['description'] ?? data['url'] ?? '').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
             trailing: PopupMenuButton<String>(
               onSelected: (value) => _review(doc, value),
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'approved', child: Text('اعتماد')),
-                PopupMenuItem(value: 'rejected', child: Text('رفض')),
+              itemBuilder: (context) => [
+                if (widget.canPublish) const PopupMenuItem(value: 'approved', child: Text('اعتماد ونشر')),
+                const PopupMenuItem(value: 'rejected', child: Text('رفض')),
               ],
             ),
           );
