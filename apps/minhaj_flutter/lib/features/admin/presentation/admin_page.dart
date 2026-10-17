@@ -43,9 +43,9 @@ class AdminPage extends StatelessWidget {
           const SizedBox(height: 6),
           Text('الدور الحالي: ' + role),
           const SizedBox(height: 16),
-          if (canEdit) _ResourceManager(admin: admin!, user: user),
+          if (canEdit) _ResourceManager(user: user),
           const SizedBox(height: 22),
-          _ReviewQueue(admin: admin!, user: user),
+          _ReviewQueue(user: user),
         ]);
       },
     );
@@ -53,8 +53,7 @@ class AdminPage extends StatelessWidget {
 }
 
 class _ResourceManager extends StatefulWidget {
-  const _ResourceManager({required this.admin, required this.user});
-  final Map<String, dynamic> admin;
+  const _ResourceManager({required this.user});
   final User user;
   @override
   State<_ResourceManager> createState() => _ResourceManagerState();
@@ -258,7 +257,7 @@ class _ResourceEditorDialogState extends State<_ResourceEditorDialog> {
         Navigator.pop(context, {
           'title': _title.text.trim(), 'url': _url.text.trim(), 'description': _description.text.trim(),
           'branchIds': [_branchId], 'branchId': _branchId, 'subjectId': _subjectId, 'categoryId': (widget.initial?['categoryId'] ?? '').toString(),
-          'type': _type, 'author': _author.text.trim(), 'keywords': keywords, 'tags': <String>[],
+          'type': _type, 'author': _author.text.trim(), 'keywords': keywords, 'tags': widget.initial?['tags'] ?? <String>[],
           'order': (widget.initial?['order'] as num?)?.toInt() ?? 0, 'active': _active,
         });
       }, child: const Text('حفظ')),
@@ -267,8 +266,7 @@ class _ResourceEditorDialogState extends State<_ResourceEditorDialog> {
 }
 
 class _ReviewQueue extends StatefulWidget {
-  const _ReviewQueue({required this.admin, required this.user});
-  final Map<String, dynamic> admin;
+  const _ReviewQueue({required this.user});
   final User user;
   @override
   State<_ReviewQueue> createState() => _ReviewQueueState();
