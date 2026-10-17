@@ -220,7 +220,7 @@ class _ResourceEditorDialogState extends State<_ResourceEditorDialog> {
     final requestedBranch = data['branchId']?.toString() ?? (branchIds.isNotEmpty ? branchIds.first : '');
     _branchId = widget.branches.any((b) => b['id'] == requestedBranch) ? requestedBranch : widget.branches.first['id'].toString();
     final compatibleSubjects = widget.subjects.where((s) => _branchId == null || ((s['branchIds'] is List && (s['branchIds'] as List).map((e) => '$e').contains(_branchId)) || (s['branchId'] ?? '').toString() == _branchId)).toList();
-    _subjectId = compatibleSubjects.any((s) => s['id'] == data['subjectId']) ? data['subjectId'].toString() : (compatibleSubjects.isNotEmpty ? compatibleSubjects.first['id'].toString() : widget.subjects.first['id'].toString());
+    _subjectId = compatibleSubjects.any((s) => s['id'] == data['subjectId']) ? data['subjectId'].toString() : (compatibleSubjects.isNotEmpty ? compatibleSubjects.first['id'].toString() : null);
     _type = (data['type'] ?? 'link').toString();
     if (!['link', 'pdf', 'video', 'document', 'exam'].contains(_type)) _type = 'link';
     _active = data['active'] != false;
