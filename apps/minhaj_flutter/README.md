@@ -4,11 +4,11 @@ This directory contains the Flutter Android/Web application. It is kept separate
 
 ## Web preview
 
-The web build defaults to the existing public Firebase **web client** configuration for project `minhaj-1be6f`. This is client configuration, not an admin secret. Firestore Rules and Firebase Authentication settings must continue to enforce access.
+The web build defaults to the existing public Firebase web client configuration for project `minhaj-1be6f`. This is client configuration, not an admin secret. Firestore Rules and Firebase Authentication settings must continue to enforce access.
 
 Do not deploy the Flutter web app to a public production URL until its queries, administrator role flows, and Firestore indexes have been tested against the project.
 
-Override the web settings using:
+Optional web overrides:
 ```sh
 flutter run -d chrome \
   --dart-define=FIREBASE_API_KEY=YOUR_WEB_API_KEY \
@@ -21,18 +21,15 @@ flutter run -d chrome \
 
 ## Android configuration
 
-Register an Android app in the existing Firebase project `minhaj-1be6f` using the Android application ID `com.karam.minhaj`. Generate its **Android-specific** Firebase configuration (FlutterFire CLI or Firebase Console), then pass the Android app's `apiKey`, `appId`, `messagingSenderId`, and `projectId` through build-time defines. The web `appId` must not be reused as the Android app ID.
+Android client configuration for Firebase project `minhaj-1be6f` and application ID `com.karam.minhaj` is included as default values in `lib/core/config/firebase_config.dart`. You can build an APK without entering Firebase values again:
 
-Example:
 ```sh
-flutter build apk --release \
-  --dart-define=FIREBASE_API_KEY=YOUR_ANDROID_API_KEY \
-  --dart-define=FIREBASE_APP_ID=YOUR_ANDROID_APP_ID \
-  --dart-define=FIREBASE_MESSAGING_SENDER_ID=YOUR_SENDER_ID \
-  --dart-define=FIREBASE_PROJECT_ID=minhaj-1be6f
+flutter build apk --release
 ```
 
-Do not commit service-account JSON, admin credentials, AI-provider secrets, or other privileged credentials. Firebase client configuration is not authorization; Firestore Rules are.
+To override the defaults for a different build, pass `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, and `FIREBASE_PROJECT_ID` with `--dart-define`.
+
+Firebase client configuration is expected to be present in a client app. It does not grant administrator access by itself. Firestore Rules and Firebase Authentication must enforce permissions. Never commit service-account JSON, private service-account keys, admin credentials, or AI-provider secrets.
 
 ## Current features
 
