@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/data/study_repository.dart';
 import '../../../core/widgets/async_state.dart';
 
@@ -136,10 +138,54 @@ class _ResourceTile extends StatelessWidget {
           const SizedBox(height: 10), Text(item['description'].toString(), style: const TextStyle(height: 1.6)),
         ],
         const SizedBox(height: 12),
-        Align(alignment: AlignmentDirectional.centerStart, child: OutlinedButton.icon(
-          onPressed: url.startsWith('https://') || url.startsWith('http://') ? () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication) : null,
-          icon: const Icon(Icons.open_in_new_rounded, size: 17), label: const Text('فتح المصدر'))),
+        Wrap(spacing: 8, runSpacing: 6, children: [
+          OutlinedButton.icon(
+            onPressed: url.startsWith('https://') || url.startsWith('http://') ? () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication) : null,
+            icon: const Icon(Icons.open_in_new_rounded, size: 17), label: const Text('فتح المصدر')),
+          TextButton.icon(onPressed: () => _report(context), icon: const Icon(Icons.flag_outlined, size: 17), label: const Text('الإبلاغ عن مشكلة')),
+        ]),
       ]),
     ));
+  Future<void> _report(BuildContext context) async {
+    final user = AuthService.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سجّل الدخول لإرسال بلاغ مرتبط بحسابك.')));
+      context.go('/profile');
+      return;
+    }
+    final controller = TextEditingController();
+    final description = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('الإبلاغ عن مشكلة'),
+        content: SizedBox(width: 420, child: TextField(
+          controller: controller, autofocus: true, maxLength: 2000, maxLines: 4,
+          decoration: const InputDecoration(labelText: 'ما المشكلة في هذا المصدر؟', hintText: 'الرابط لا يعمل، العنوان غير صحيح...'),
+        )),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, controller.text.trim()), child: const Text('إرسال')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (description == null || description.trim().isEmpty) return;
+    try {
+      await FirebaseFirestore.instance.collection('problemReports').add({
+        'sourceId': (item['id'] ?? '').toString(),
+        'sourceTitle': (item['title'] ?? 'مصدر').toString(),
+        'kind': 'resource_problem',
+        'description': description.trim(),
+        'status': 'open',
+        'createdAt': FieldValue.serverTimestamp(),
+        'studentUid': user.uid,
+        'studentEmail': user.email ?? '',
+      });
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال البلاغ للمراجعة.')));
+    } catch (error) {
+      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
   }
 }
