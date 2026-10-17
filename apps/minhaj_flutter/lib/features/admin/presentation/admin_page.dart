@@ -27,7 +27,7 @@ class AdminPage extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>?>(
       future: StudyRepository.getAdmin(user.uid),
       builder: (context, snapshot) {
-        if (!snapshot.hasData && !snapshot.hasError) return const Center(child: CircularProgressIndicator());
+        if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
         if (snapshot.hasError) return AsyncStateView(message: firebaseErrorMessage(snapshot.error!));
         final admin = snapshot.data;
         final role = (admin?['role'] ?? '').toString().toLowerCase();
@@ -205,7 +205,8 @@ class _ResourceEditorDialogState extends State<_ResourceEditorDialog> {
     _keywords = TextEditingController(text: data['keywords'] is List ? (data['keywords'] as List).join(', ') : '');
     _author = TextEditingController(text: (data['author'] ?? '').toString());
     final branchIds = data['branchIds'] is List ? (data['branchIds'] as List).map((e) => '$e').toList() : <String>[];
-    _branchId = widget.branches.any((b) => b['id'] == (data['branchId'] ?? branchIds.firstOrNull)) ? (data['branchId'] ?? branchIds.firstOrNull)?.toString() : widget.branches.first['id'].toString();
+    final requestedBranch = data['branchId']?.toString() ?? (branchIds.isNotEmpty ? branchIds.first : '');
+    _branchId = widget.branches.any((b) => b['id'] == requestedBranch) ? requestedBranch : widget.branches.first['id'].toString();
     _subjectId = widget.subjects.any((s) => s['id'] == data['subjectId']) ? data['subjectId'].toString() : widget.subjects.first['id'].toString();
     _type = (data['type'] ?? 'link').toString();
     if (!['link', 'pdf', 'video', 'document', 'exam'].contains(_type)) _type = 'link';
