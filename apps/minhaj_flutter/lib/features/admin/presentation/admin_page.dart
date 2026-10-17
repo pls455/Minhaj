@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/auth/auth_service.dart';
 import '../../../core/data/study_repository.dart';
 import '../../../core/widgets/async_state.dart';
+import 'catalog_admin.dart';
 
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key});
@@ -34,6 +35,7 @@ class AdminPage extends StatelessWidget {
         final active = admin?['active'] == true;
         final canReview = active && ['reviewer', 'content_admin', 'super_admin', 'superadmin', 'admin'].contains(role);
         final canEdit = active && ['content_admin', 'super_admin', 'superadmin', 'admin'].contains(role);
+        final canManageStructure = active && ['super_admin', 'superadmin', 'admin'].contains(role);
         if (!canReview) return const AsyncStateView(
           icon: Icons.no_accounts_rounded,
           message: 'هذا الحساب غير مسجل كمشرف نشط. تتم إدارة الصلاحيات من سجل admins في Firestore، ولا يمكن إنشاء صلاحية لنفسك من التطبيق.',
@@ -43,6 +45,9 @@ class AdminPage extends StatelessWidget {
           const SizedBox(height: 6),
           Text('الدور الحالي: ' + role),
           const SizedBox(height: 16),
+          if (canManageStructure) CatalogManager(collectionName: 'branches', title: 'الفروع الدراسية'),
+          if (canEdit) CatalogManager(collectionName: 'subjects', title: 'المواد الدراسية'),
+          if (canManageStructure) CatalogManager(collectionName: 'categories', title: 'تصنيفات المحتوى'),
           if (canEdit) _ResourceManager(user: user),
           const SizedBox(height: 22),
           _ReviewQueue(user: user),
