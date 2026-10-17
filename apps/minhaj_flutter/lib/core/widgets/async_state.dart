@@ -34,5 +34,5 @@ String firebaseErrorMessage(Object error) {
   if (value.contains('network') || value.contains('unavailable')) return 'تعذّر الاتصال بالخدمة. تحقّق من الإنترنت ثم أعد المحاولة.';
   if (value.contains('email-already-in-use')) return 'هذا البريد مسجّل بالفعل.';
   if (value.contains('invalid-credential') || value.contains('wrong-password') || value.contains('user-not-found')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-  return 'حدث خطأ أثناء تنفيذ العملية. ' + (value.length > 180 ? value.substring(0, 180) : value);
+  return 'حدث خطأ أثناء تنفيذ العملية. ${value.length > 180 ? value.substring(0, 180) : value}';
 }

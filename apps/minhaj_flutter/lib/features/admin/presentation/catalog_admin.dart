@@ -24,10 +24,12 @@ class _CatalogManagerState extends State<CatalogManager> {
   Future<void> _loadBranches() async {
     try {
       final result = await FirebaseFirestore.instance.collection('branches').orderBy('order').limit(50).get();
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _branches = result.docs.map((doc) => {'id': doc.id, ...doc.data()}).where((row) => row['active'] != false).toList();
         _loadingBranches = false;
       });
+      }
     } catch (_) {
       if (mounted) setState(() => _loadingBranches = false);
     }

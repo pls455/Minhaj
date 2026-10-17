@@ -15,7 +15,8 @@ class AdminPage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!AuthService.isReady) return const AsyncStateView(icon: Icons.admin_panel_settings_outlined, message: 'لوحة الإدارة تحتاج إعداد Firebase في نسخة التطبيق.');
     final user = AuthService.currentUser;
-    if (user == null) return Center(child: Padding(
+    if (user == null) {
+      return Center(child: Padding(
       padding: const EdgeInsets.all(24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.lock_outline_rounded, size: 42),
@@ -25,6 +26,7 @@ class AdminPage extends StatelessWidget {
         FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
       ]),
     ));
+    }
     return FutureBuilder<Map<String, dynamic>?>(
       future: StudyRepository.getAdmin(user.uid),
       builder: (context, snapshot) {
@@ -36,14 +38,16 @@ class AdminPage extends StatelessWidget {
         final canReview = active && ['reviewer', 'content_admin', 'super_admin', 'superadmin', 'admin'].contains(role);
         final canEdit = active && ['content_admin', 'super_admin', 'superadmin', 'admin'].contains(role);
         final canManageStructure = active && ['super_admin', 'superadmin', 'admin'].contains(role);
-        if (!canReview) return const AsyncStateView(
+        if (!canReview) {
+          return const AsyncStateView(
           icon: Icons.no_accounts_rounded,
           message: 'هذا الحساب غير مسجل كمشرف نشط. تتم إدارة الصلاحيات من سجل admins في Firestore، ولا يمكن إنشاء صلاحية لنفسك من التطبيق.',
         );
+        }
         return ListView(padding: const EdgeInsets.all(20), children: [
           Text('لوحة الإدارة', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          Text('الدور الحالي: ' + role),
+          Text('الدور الحالي: $role'),
           const SizedBox(height: 16),
           if (canManageStructure) CatalogManager(collectionName: 'branches', title: 'الفروع الدراسية'),
           if (canEdit) CatalogManager(collectionName: 'subjects', title: 'المواد الدراسية'),
@@ -368,7 +372,7 @@ class _ReviewQueueState extends State<_ReviewQueue> {
       await batch.commit();
       if (mounted) {
         final message = status == 'approved' && publishedId != null
-            ? 'تم اعتماد الاقتراح ونشره ضمن ' + publishedCollection!
+            ? 'تم اعتماد الاقتراح ونشره ضمن ${publishedCollection!}'
             : 'تم تحديث حالة الاقتراح.';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         setState(() => _future = _load());

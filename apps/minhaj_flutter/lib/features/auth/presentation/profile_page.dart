@@ -43,10 +43,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!AuthService.isReady) return const AsyncStateView(
+    if (!AuthService.isReady) {
+      return const AsyncStateView(
       icon: Icons.account_circle_outlined,
       message: 'حسابات الطلاب تحتاج إعداد Firebase الخاص بالمشروع عند بناء التطبيق. يمكنك معاينة الواجهات، لكن تسجيل الدخول غير مفعّل في هذه النسخة.',
     );
+    }
     return StreamBuilder<User?>(
       stream: AuthService.authChanges(),
       builder: (context, snapshot) {

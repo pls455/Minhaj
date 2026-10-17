@@ -83,7 +83,7 @@ class _SharedFlashcardsPageState extends State<SharedFlashcardsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم نسخ المجموعة إلى حسابك.')),
       );
-      context.go('/cards/' + setRef.id);
+      context.go('/cards/${setRef.id}');
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +124,7 @@ class _SharedFlashcardsPageState extends State<SharedFlashcardsPage> {
           ]),
           if ((shared['description'] ?? '').toString().trim().isNotEmpty)
             Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(shared['description'].toString(), style: const TextStyle(height: 1.6))),
-          Text(cards.length.toString() + ' بطاقة • مجموعة للقراءة والمراجعة',
+          Text('${cards.length} بطاقة • مجموعة للقراءة والمراجعة',
             style: const TextStyle(color: Color(0xFF64748B))),
           const SizedBox(height: 14),
           StreamBuilder<User?>(
@@ -175,7 +175,7 @@ class _SharedCardState extends State<_SharedCard> {
     child: Padding(padding: const EdgeInsets.all(16), child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('بطاقة ' + widget.index.toString(), style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
+        Text('بطاقة ${widget.index}', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
         Text((widget.data['question'] ?? '').toString(), style: const TextStyle(fontWeight: FontWeight.w700, height: 1.6)),
         const SizedBox(height: 12),

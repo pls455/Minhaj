@@ -41,8 +41,11 @@ class _ResourcesPageState extends State<ResourcesPage> {
       setState(() { _error = firebaseErrorMessage(StateError('FIREBASE_NOT_CONFIGURED')); _loading = false; });
       return;
     }
-    if (reset) setState(() { _loading = true; _cursor = null; _items = []; _error = null; });
-    else setState(() => _moreLoading = true);
+    if (reset) {
+      setState(() { _loading = true; _cursor = null; _items = []; _error = null; });
+    } else {
+      setState(() => _moreLoading = true);
+    }
     try {
       final page = await StudyRepository.listResources(
         branchId: _branchId, subjectId: _subjectId, search: _search.text,

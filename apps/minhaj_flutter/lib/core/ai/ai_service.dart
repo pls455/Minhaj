@@ -26,7 +26,7 @@ class AiService {
       throw StateError('تعذّر قراءة استجابة مساعد منهاج.');
     }
     if (response.statusCode < 200 || response.statusCode >= 300 || payload['ok'] != true) {
-      final message = (payload['error'] ?? 'تعذّر الاتصال بالمساعد (HTTP ' + response.statusCode.toString() + ').').toString();
+      final message = (payload['error'] ?? 'تعذّر الاتصال بالمساعد (HTTP ${response.statusCode}).').toString();
       throw StateError(message);
     }
     final result = payload['result'];

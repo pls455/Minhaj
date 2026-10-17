@@ -65,9 +65,9 @@ class _SchoolsPageState extends State<SchoolsPage> {
               ])),
             ]),
             if (details.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 9), child: Text(details)),
-            if (directorate.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('المديرية: ' + directorate)),
-            if ((school['address'] ?? '').toString().trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('العنوان: ' + school['address'].toString())),
-            if ((school['phone'] ?? '').toString().trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: SelectableText('الهاتف: ' + school['phone'].toString())),
+            if (directorate.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('المديرية: $directorate')),
+            if ((school['address'] ?? '').toString().trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: Text('العنوان: ${school['address']}')),
+            if ((school['phone'] ?? '').toString().trim().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 5), child: SelectableText('الهاتف: ${school['phone']}')),
           ])));
         }),
         if (data.directorates.isNotEmpty) ...[

@@ -37,7 +37,7 @@ class SharedTestPage extends StatelessWidget {
             Expanded(child: Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
           ]),
           const SizedBox(height: 8),
-          Text(questions.length.toString() + ' سؤال • اختبار تدريبي تمت مشاركته معك'),
+          Text('${questions.length} سؤال • اختبار تدريبي تمت مشاركته معك'),
           const SizedBox(height: 16),
           if (questions.isEmpty) const AsyncStateView(icon: Icons.quiz_outlined, message: 'لا يحتوي رابط المشاركة على أسئلة قابلة للتشغيل.'),
           if (questions.isNotEmpty) FilledButton.icon(
@@ -83,9 +83,9 @@ class SharedTestPage extends StatelessWidget {
     }
     try {
       final rawTitle = (shared['title'] ?? 'اختبار مشترك').toString();
-      final title = (rawTitle + ' (نسخة)').length > 200
-          ? (rawTitle + ' (نسخة)').substring(0, 200)
-          : rawTitle + ' (نسخة)';
+      final title = ('$rawTitle (نسخة)').length > 200
+          ? ('$rawTitle (نسخة)').substring(0, 200)
+          : '$rawTitle (نسخة)';
       await FirebaseFirestore.instance.collection('studentTests').add({
         'ownerId': user.uid,
         'title': title,

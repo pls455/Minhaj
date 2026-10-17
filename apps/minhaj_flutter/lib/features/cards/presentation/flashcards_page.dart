@@ -55,9 +55,9 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
         ...sets.map((item) => Card(margin: const EdgeInsets.only(bottom: 10), child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.style_rounded)),
           title: Text((item['title'] ?? 'مجموعة بطاقات').toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
-          subtitle: Text((item['description'] ?? '').toString() + ' • ' + ((item['cardCount'] ?? 0).toString()) + ' بطاقة'),
+          subtitle: Text('${item['description'] ?? ''} • ${item['cardCount'] ?? 0} بطاقة'),
           trailing: const Icon(Icons.chevron_left_rounded),
-          onTap: () => context.go('/cards/' + item['id'].toString()),
+          onTap: () => context.go('/cards/${item['id']}'),
         ))),
       ]);
     },
@@ -89,7 +89,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
         'ownerId': user.uid, 'title': result['title'], 'description': result['description'],
         'cardCount': 0, 'createdAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp(),
       });
-      if (mounted) context.go('/cards/' + doc.id);
+      if (mounted) context.go('/cards/${doc.id}');
     } catch (error) {
       if (mounted) setState(() => _error = firebaseErrorMessage(error));
     } finally {
@@ -242,7 +242,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
       });
 
       if (!mounted) return;
-      final shareLink = Uri.base.replace(fragment: '/cards/shared/' + setId).toString();
+      final shareLink = Uri.base.replace(fragment: '/cards/shared/$setId').toString();
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -317,7 +317,8 @@ class _PublicFlashcards extends StatelessWidget {
       if (snapshot.hasError) return AsyncStateView(message: firebaseErrorMessage(snapshot.error!));
       if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
       final cards = snapshot.data!.docs;
-      if (cards.isEmpty) return Center(child: Padding(
+      if (cards.isEmpty) {
+        return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.style_outlined, size: 42, color: Color(0xFF0F766E)),
@@ -325,6 +326,7 @@ class _PublicFlashcards extends StatelessWidget {
           const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('إنشاء بطاقات شخصية')),
         ]),
       ));
+      }
       return ListView(padding: const EdgeInsets.all(20), children: [
         Text('بطاقات مراجعة عامة', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),

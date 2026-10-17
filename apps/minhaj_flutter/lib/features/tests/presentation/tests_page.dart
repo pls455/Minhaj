@@ -57,11 +57,11 @@ class _TestsPageState extends State<TestsPage> {
           const SizedBox(height: 12),
           ...List.generate(4, (index) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: TextField(controller: optionControllers[index], decoration: InputDecoration(labelText: 'الخيار ' + String.fromCharCode(65 + index))),
+            child: TextField(controller: optionControllers[index], decoration: InputDecoration(labelText: 'الخيار ${String.fromCharCode(65 + index)}')),
           )),
           DropdownButtonFormField<int>(
             initialValue: correctIndex, decoration: const InputDecoration(labelText: 'الإجابة الصحيحة'),
-            items: List.generate(4, (index) => DropdownMenuItem(value: index, child: Text('الخيار ' + String.fromCharCode(65 + index)))),
+            items: List.generate(4, (index) => DropdownMenuItem(value: index, child: Text('الخيار ${String.fromCharCode(65 + index)}'))),
             onChanged: (value) { if (value != null) setDialogState(() => correctIndex = value); },
           ),
         ]))),
@@ -99,7 +99,7 @@ class _TestsPageState extends State<TestsPage> {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الاختبار. رقم الاختبار: ' + ref.id)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حفظ الاختبار. رقم الاختبار: ${ref.id}')));
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
     }
@@ -123,7 +123,7 @@ class _PublicTests extends StatelessWidget {
         return Card(margin: const EdgeInsets.only(bottom: 9), child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.assignment_outlined)),
           title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-          subtitle: Text((data['description'] ?? (questions is List ? questions.length.toString() + ' سؤال' : 'تدريب منشور')).toString()),
+          subtitle: Text((data['description'] ?? (questions is List ? '${questions.length} سؤال' : 'تدريب منشور')).toString()),
           trailing: const Icon(Icons.chevron_left_rounded),
           onTap: questions is List && questions.isNotEmpty
             ? () => _openRunner(context, title, questions)
@@ -169,7 +169,7 @@ class _MyTestsState extends State<_MyTests> {
         'createdAt': FieldValue.serverTimestamp(),
       });
       if (!mounted) return;
-      final link = Uri.base.replace(fragment: '/tests/shared/' + testId).toString();
+      final link = Uri.base.replace(fragment: '/tests/shared/$testId').toString();
       await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
         title: const Text('رابط الاختبار جاهز'),
         content: SelectableText(link, style: const TextStyle(height: 1.6)),
@@ -201,7 +201,7 @@ class _MyTestsState extends State<_MyTests> {
         return Card(margin: const EdgeInsets.only(bottom: 9), child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.quiz_rounded)),
           title: Text((data['title'] ?? 'اختبار شخصي').toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
-          subtitle: Text((questions is List ? questions.length : 0).toString() + ' سؤال'),
+          subtitle: Text('${questions is List ? questions.length : 0} سؤال'),
           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
             IconButton(tooltip: 'مشاركة الاختبار', onPressed: questions is List && questions.isNotEmpty ? () => _shareTest(doc.id, data) : null,
               icon: const Icon(Icons.share_outlined)),
@@ -215,7 +215,7 @@ class _MyTestsState extends State<_MyTests> {
 }
 
 class QuizRunner extends StatefulWidget {
-  const QuizRunner({required this.title, required this.questions});
+  const QuizRunner({super.key, required this.title, required this.questions});
   final String title;
   final List<dynamic> questions;
   @override
@@ -245,7 +245,7 @@ class _QuizRunnerState extends State<QuizRunner> {
       ? Column(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.emoji_events_outlined, size: 46, color: Color(0xFF0F766E)),
           const SizedBox(height: 12),
-          Text('نتيجتك: ' + _score.toString() + ' من ' + widget.questions.length.toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+          Text('نتيجتك: $_score من ${widget.questions.length}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
           const SizedBox(height: 8),
           const Text('هذه النتيجة محلية في جلسة التدريب وليست سجل علامة رسميًا.'),
         ])
@@ -253,7 +253,7 @@ class _QuizRunnerState extends State<QuizRunner> {
           final item = widget.questions[index];
           final options = _options(item);
           return Padding(padding: const EdgeInsets.only(bottom: 18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('السؤال ' + (index + 1).toString(), style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
+            Text('السؤال ${index + 1}', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
             const SizedBox(height: 7),
             Text(_questionText(item), style: const TextStyle(height: 1.6)),
             if (options.isEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('نوع السؤال غير مدعوم في شاشة التدريب الحالية.')),

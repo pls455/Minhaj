@@ -84,13 +84,15 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
   Widget build(BuildContext context) {
     if (!StudyRepository.isReady) return const AsyncStateView(icon: Icons.lightbulb_outline_rounded, message: 'إرسال الاقتراحات يحتاج إعداد Firebase في نسخة التطبيق.');
     final user = AuthService.currentUser;
-    if (user == null) return Center(child: Padding(
+    if (user == null) {
+      return Center(child: Padding(
       padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.lightbulb_outline_rounded, size: 42, color: Color(0xFF0F766E)),
         const SizedBox(height: 12), const Text('سجّل الدخول حتى نربط الاقتراح باسم حسابك ونمنع الإرسال المجهول للمصادر.', textAlign: TextAlign.center),
         const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
       ]),
     ));
+    }
     if (_loading) return const Center(child: CircularProgressIndicator());
     return ListView(padding: const EdgeInsets.all(20), children: [
       Text('اقترح مصدرًا', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
@@ -139,7 +141,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
             const SizedBox(height: 8),
             ...rows.map((doc) => Card(child: ListTile(
               title: Text((doc.data()['title'] ?? 'مصدر').toString()),
-              subtitle: Text('الحالة: ' + (doc.data()['status'] ?? 'pending').toString()),
+              subtitle: Text('الحالة: ${doc.data()['status'] ?? 'pending'}'),
               leading: const Icon(Icons.history_rounded),
             ))),
           ]);

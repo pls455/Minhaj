@@ -66,17 +66,19 @@ class _AssistantPageState extends State<AssistantPage> {
     try {
       final quota = await _reserve(user);
       if (!quota.allowed) {
-        setState(() { _remaining = 0; _resetAt = quota.resetAt; _messages.add(_Message('وصلت إلى الحد المجاني: 3 أسئلة خلال 3 أيام. يتجدد الحد في ' + _formatDate(quota.resetAt) + '.', false)); });
+        setState(() { _remaining = 0; _resetAt = quota.resetAt; _messages.add(_Message('وصلت إلى الحد المجاني: 3 أسئلة خلال 3 أيام. يتجدد الحد في ${_formatDate(quota.resetAt)}.', false)); });
         return;
       }
       setState(() { _remaining = quota.remaining; _resetAt = quota.resetAt; });
       final answer = await AiService.ask(question);
       if (mounted) setState(() => _messages.add(_Message(answer, false)));
     } catch (error) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _error = firebaseErrorMessage(error);
         _messages.add(_Message(_error!, false));
       });
+      }
     } finally {
       if (mounted) { setState(() => _sending = false); _scrollToEnd(); }
     }
@@ -88,39 +90,43 @@ class _AssistantPageState extends State<AssistantPage> {
     });
   }
 
-  String _formatDate(DateTime date) => date.year.toString() + '/' + date.month.toString().padLeft(2, '0') + '/' + date.day.toString().padLeft(2, '0');
+  String _formatDate(DateTime date) => '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
     if (!AuthService.isReady) return const AsyncStateView(icon: Icons.auto_awesome_outlined, message: 'مساعد منهاج يحتاج إعداد Firebase. إعداد رابط المساعد موجود من خلال متغير MINHAJ_AI_URL، ولا توضع مفاتيح النموذج داخل التطبيق.');
-    if (AuthService.currentUser == null) return Center(child: Padding(
+    if (AuthService.currentUser == null) {
+      return Center(child: Padding(
       padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         const Icon(Icons.auto_awesome_rounded, size: 44, color: Color(0xFF0F766E)),
         const SizedBox(height: 12), const Text('للاستخدام العادل وحفظ حد الأسئلة، سجّل الدخول أولًا.', textAlign: TextAlign.center),
         const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
       ]),
     ));
+    }
     return Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 8), child: Row(children: [
         const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0F766E)),
         const SizedBox(width: 8),
         const Expanded(child: Text('مساعد منهاج', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
-        if (_remaining != null) Text('متبقي ' + _remaining.toString() + '/3', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        if (_remaining != null) Text('متبقي $_remaining/3', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
       ])),
       if (_resetAt != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: Text('يتجدد الحد في ' + _formatDate(_resetAt!), style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+        child: Text('يتجدد الحد في ${_formatDate(_resetAt!)}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
       )),
       Expanded(child: ListView.builder(
         controller: _scroll, padding: const EdgeInsets.all(16),
         itemCount: _messages.length + (_sending ? 1 : 0),
         itemBuilder: (context, index) {
-          if (_sending && index == _messages.length) return const Align(alignment: AlignmentDirectional.centerStart, child: Padding(
+          if (_sending && index == _messages.length) {
+            return const Align(alignment: AlignmentDirectional.centerStart, child: Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Card(child: Padding(padding: EdgeInsets.all(14), child: Row(mainAxisSize: MainAxisSize.min, children: [
               SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)), SizedBox(width: 10), Text('جارٍ التفكير...'),
             ]))),
           ));
+          }
           final message = _messages[index];
           return Align(
             alignment: message.isUser ? AlignmentDirectional.centerStart : AlignmentDirectional.centerEnd,

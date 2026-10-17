@@ -26,9 +26,11 @@ class _BranchesPageState extends State<BranchesPage> {
     future: _future,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-      if (snapshot.hasError) return AsyncStateView(
+      if (snapshot.hasError) {
+        return AsyncStateView(
         message: firebaseErrorMessage(snapshot.error!), onRetry: () => setState(() => _future = _load()),
       );
+      }
       final data = snapshot.data!;
       if (data.branches.isEmpty) return const AsyncStateView(icon: Icons.school_outlined, message: 'لا توجد فروع منشورة بعد. عند ربط Firebase ستظهر الفروع المسجلة في منهاج.');
       return ListView(
@@ -58,7 +60,7 @@ class _BranchesPageState extends State<BranchesPage> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                       const SizedBox(height: 4),
-                      Text(branchSubjects.length.toString() + ' مادة ظاهرة', style: const TextStyle(color: Color(0xFF64748B))),
+                      Text('${branchSubjects.length} مادة ظاهرة', style: const TextStyle(color: Color(0xFF64748B))),
                       if ((branch['description'] ?? '').toString().trim().isNotEmpty) ...[
                         const SizedBox(height: 5),
                         Text(branch['description'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
