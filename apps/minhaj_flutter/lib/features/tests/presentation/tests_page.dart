@@ -59,7 +59,7 @@ class _TestsPageState extends State<TestsPage> {
             child: TextField(controller: optionControllers[index], decoration: InputDecoration(labelText: 'الخيار ' + String.fromCharCode(65 + index))),
           )),
           DropdownButtonFormField<int>(
-            value: correctIndex, decoration: const InputDecoration(labelText: 'الإجابة الصحيحة'),
+            initialValue: correctIndex, decoration: const InputDecoration(labelText: 'الإجابة الصحيحة'),
             items: List.generate(4, (index) => DropdownMenuItem(value: index, child: Text('الخيار ' + String.fromCharCode(65 + index)))),
             onChanged: (value) { if (value != null) setDialogState(() => correctIndex = value); },
           ),
