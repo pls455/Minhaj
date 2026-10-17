@@ -3,6 +3,14 @@ import 'package:go_router/go_router.dart';
 import '../../../core/data/study_repository.dart';
 import '../../../core/widgets/async_state.dart';
 
+String _branchAsset(String name) {
+  final value = name.toLowerCase();
+  if (value.contains('علمي') || value.contains('scientific')) return 'assets/branch_scientific.png';
+  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/branch_literary.png';
+  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/branch_industrial.png';
+  return 'assets/minhaj-logo.png';
+}
+
 class BranchesPage extends StatefulWidget {
   const BranchesPage({super.key});
   @override
@@ -55,7 +63,20 @@ class _BranchesPageState extends State<BranchesPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(18),
                   child: Row(children: [
-                    Container(width: 54, height: 54, decoration: BoxDecoration(color: const Color(0xFFE6F4F1), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.school_rounded, color: Color(0xFF0F766E), size: 28)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        _branchAsset(name),
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 72, height: 72,
+                          color: const Color(0xFFE6F4F1),
+                          child: const Icon(Icons.school_rounded, color: Color(0xFF0F766E), size: 30),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 14),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
