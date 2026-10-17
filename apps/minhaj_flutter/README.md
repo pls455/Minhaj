@@ -21,7 +21,7 @@ flutter run -d chrome \
 
 ## Android configuration
 
-Register an Android app in the existing Firebase project `minhaj-1be6f` using the exact Android application ID. Generate its **Android-specific** Firebase configuration (FlutterFire CLI or Firebase Console), then pass the Android app's `apiKey`, `appId`, `messagingSenderId`, and `projectId` through build-time defines. The web `appId` must not be reused as the Android app ID.
+Register an Android app in the existing Firebase project `minhaj-1be6f` using the Android application ID `com.karam.minhaj`. Generate its **Android-specific** Firebase configuration (FlutterFire CLI or Firebase Console), then pass the Android app's `apiKey`, `appId`, `messagingSenderId`, and `projectId` through build-time defines. The web `appId` must not be reused as the Android app ID.
 
 Example:
 ```sh
