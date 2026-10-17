@@ -107,14 +107,14 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
         TextFormField(controller: _keywords, decoration: const InputDecoration(labelText: 'كلمات مفتاحية (افصل بينها بفواصل)')),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
-          value: _branches.any((item) => item['id'] == _branchId) ? _branchId : null,
+          initialValue: _branches.any((item) => item['id'] == _branchId) ? _branchId : null,
           isExpanded: true, decoration: const InputDecoration(labelText: 'الفرع'),
           items: _branches.map((item) => DropdownMenuItem(value: item['id'].toString(), child: Text((item['name'] ?? 'فرع').toString()))).toList(),
           onChanged: (value) => setState(() { _branchId = value; _subjectId = null; }),
         ),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
-          value: _subjects.any((item) => item['id'] == _subjectId) ? _subjectId : null,
+          initialValue: _subjects.any((item) => item['id'] == _subjectId) ? _subjectId : null,
           isExpanded: true, decoration: const InputDecoration(labelText: 'المادة'),
           items: _subjects.where((item) => _branchId == null ||
             ((item['branchIds'] is List && (item['branchIds'] as List).map((e) => '$e').contains(_branchId)) || (item['branchId'] ?? '').toString() == _branchId))
