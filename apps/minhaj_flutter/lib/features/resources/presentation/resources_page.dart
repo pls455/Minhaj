@@ -79,7 +79,7 @@ class _ResourcesPageState extends State<ResourcesPage> {
         LayoutBuilder(builder: (context, constraints) {
           final narrow = constraints.maxWidth < 560;
           final branch = DropdownButtonFormField<String>(
-            value: _branches.any((item) => item['id'] == _branchId) ? _branchId : null,
+            initialValue: _branches.any((item) => item['id'] == _branchId) ? _branchId : null,
             isExpanded: true, decoration: const InputDecoration(labelText: 'الفرع'),
             items: [
               const DropdownMenuItem(value: '', child: Text('كل الفروع')),
@@ -88,7 +88,7 @@ class _ResourcesPageState extends State<ResourcesPage> {
             onChanged: (value) { setState(() { _branchId = value == null || value.isEmpty ? null : value; _subjectId = null; }); _load(reset: true); },
           );
           final subject = DropdownButtonFormField<String>(
-            value: _subjects.any((item) => item['id'] == _subjectId) ? _subjectId : null,
+            initialValue: _subjects.any((item) => item['id'] == _subjectId) ? _subjectId : null,
             isExpanded: true, decoration: const InputDecoration(labelText: 'المادة'),
             items: [
               const DropdownMenuItem(value: '', child: Text('كل المواد')),
