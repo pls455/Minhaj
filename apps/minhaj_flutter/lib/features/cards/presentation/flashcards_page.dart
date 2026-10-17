@@ -226,3 +226,34 @@ class _LoginPrompt extends StatelessWidget {
     ]),
   ));
 }
+
+class _PublicFlashcards extends StatelessWidget {
+  const _PublicFlashcards();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+    future: FirebaseFirestore.instance.collection('flashcards').where('active', isEqualTo: true).limit(50).get(),
+    builder: (context, snapshot) {
+      if (snapshot.hasError) return AsyncStateView(message: firebaseErrorMessage(snapshot.error!));
+      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+      final cards = snapshot.data!.docs;
+      if (cards.isEmpty) return Center(child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.style_outlined, size: 42, color: Color(0xFF0F766E)),
+          const SizedBox(height: 12), const Text('لا توجد بطاقات عامة منشورة حاليًا.', textAlign: TextAlign.center),
+          const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('إنشاء بطاقات شخصية')),
+        ]),
+      ));
+      return ListView(padding: const EdgeInsets.all(20), children: [
+        Text('بطاقات مراجعة عامة', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        const Text('يمكنك مراجعة البطاقات العامة دون حساب. سجّل الدخول لإنشاء مجموعاتك الخاصة.'),
+        const SizedBox(height: 14),
+        ...cards.map((doc) => _FlashcardTile(data: doc.data(), onDelete: () {})),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(onPressed: () => context.go('/profile'), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('سجّل الدخول لإنشاء بطاقاتك')),
+      ]);
+    },
+  );
+}
