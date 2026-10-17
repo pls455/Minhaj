@@ -96,7 +96,9 @@ class _SharedFlashcardsPageState extends State<SharedFlashcardsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+  Widget build(BuildContext context) {
+    if (!AuthService.isReady) return const AsyncStateView(icon: Icons.link_off_rounded, message: 'خدمة المشاركة تحتاج إعداد Firebase في هذه النسخة.');
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
     future: FirebaseFirestore.instance.collection('studentFlashcardShares').doc(widget.shareId).get(),
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
@@ -158,6 +160,7 @@ class _SharedFlashcardsPageState extends State<SharedFlashcardsPage> {
       );
     },
   );
+  }
 }
 
 class _SharedCard extends StatefulWidget {
