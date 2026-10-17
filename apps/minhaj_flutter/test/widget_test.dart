@@ -7,7 +7,7 @@ void main() {
     await tester.pumpWidget(const MinhajApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('مِنهَاج'), findsOneWidget);
+    expect(find.text('MINHAJ'), findsOneWidget);
     expect(find.text('طريقك للتوجيهي، أوضح'), findsOneWidget);
     expect(find.text('استكشف المصادر'), findsOneWidget);
   });
