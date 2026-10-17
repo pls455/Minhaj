@@ -44,7 +44,7 @@ jobs:
           git add android web lib test analysis_options.yaml pubspec.lock pubspec.yaml .metadata .gitignore
           if ! git diff --cached --quiet; then
             git commit -m "build: bootstrap Flutter platforms and apply safe analyzer fixes"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
+            git push origin "HEAD:rebuild/flutter-platform-foundation"
           fi
 
       - name: Analyze
