@@ -31,7 +31,7 @@ jobs:
         run: flutter create --project-name minhaj --org com.karam --platforms=android,web .
 
       - name: Persist generated platform scaffolding on the development branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/rebuild/flutter-platform-foundation'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/rebuild/flutter-platform-foundation') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'rebuild/flutter-platform-foundation')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
