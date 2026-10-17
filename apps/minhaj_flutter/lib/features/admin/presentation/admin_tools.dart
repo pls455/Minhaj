@@ -339,8 +339,15 @@ class _StudyContentEditorState extends State<_StudyContentEditor> {
     final branchIds = data['branchIds'] is List ? (data['branchIds'] as List).map((x) => '$x').toList() : <String>[];
     final wantedBranch = (data['branchId'] ?? (branchIds.isNotEmpty ? branchIds.first : '')).toString();
     _branchId = widget.branches.any((x) => x['id'] == wantedBranch) ? wantedBranch : widget.branches.first['id'].toString();
+    final compatibleSubjects = widget.subjects.where((subject) =>
+      _branchId == null ||
+      ((subject['branchIds'] is List && (subject['branchIds'] as List).map((id) => '$id').contains(_branchId)) ||
+       (subject['branchId'] ?? '').toString() == _branchId)
+    ).toList();
     final wantedSubject = (data['subjectId'] ?? '').toString();
-    _subjectId = widget.subjects.any((x) => x['id'] == wantedSubject) ? wantedSubject : widget.subjects.first['id'].toString();
+    _subjectId = compatibleSubjects.any((subject) => subject['id'] == wantedSubject)
+      ? wantedSubject
+      : (compatibleSubjects.isNotEmpty ? compatibleSubjects.first['id'].toString() : null);
     _active = data['active'] != false;
   }
   @override
@@ -373,8 +380,9 @@ class _StudyContentEditorState extends State<_StudyContentEditor> {
                 (subject['branchIds'] as List).map((id) => '$id').contains(v)) ||
                (subject['branchId'] ?? '').toString() == v)
             ).toList();
-            if (compatible.isNotEmpty &&
-                !compatible.any((subject) => subject['id'] == _subjectId)) {
+            if (compatible.isEmpty) {
+              _subjectId = null;
+            } else if (!compatible.any((subject) => subject['id'] == _subjectId)) {
               _subjectId = compatible.first['id'].toString();
             }
           })),
