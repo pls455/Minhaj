@@ -112,8 +112,13 @@ class _ProfilePageState extends State<ProfilePage> {
         ListTile(leading: const Icon(Icons.admin_panel_settings_outlined), title: const Text('لوحة الإدارة'), subtitle: const Text('الأدوات المتاحة بحسب صلاحيات الحساب'), onTap: () => context.go('/admin')),
         const SizedBox(height: 14),
         OutlinedButton.icon(onPressed: () async {
-          try { await AuthService.signOut(); } catch (error) {
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+          try {
+            await AuthService.signOut();
+          } catch (error) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(firebaseErrorMessage(error))),
+            );
           }
         }, icon: const Icon(Icons.logout_rounded), label: const Text('تسجيل الخروج')),
       ]);
