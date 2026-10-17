@@ -187,6 +187,40 @@ class _MyTestsState extends State<_MyTests> {
     }
   }
 
+  Future<void> _deleteTest(String testId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف الاختبار؟'),
+        content: const Text('سيتم حذف الاختبار الشخصي ورابط مشاركته إن وُجد.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      final db = FirebaseFirestore.instance;
+      final testRef = db.collection('studentTests').doc(testId);
+      final shareRef = db.collection('studentTestShares').doc(testId);
+      final share = await shareRef.get();
+      if (share.exists && share.data()?['ownerId'] != widget.user.uid) {
+        throw StateError('تعذّر التحقق من ملكية رابط المشاركة؛ لم يُحذف الاختبار.');
+      }
+      final batch = db.batch();
+      if (share.exists) batch.delete(shareRef);
+      batch.delete(testRef);
+      await batch.commit();
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف الاختبار.')));
+      }
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
     future: FirebaseFirestore.instance.collection('studentTests').where('ownerId', isEqualTo: widget.user.uid).limit(50).get(),
@@ -205,6 +239,8 @@ class _MyTestsState extends State<_MyTests> {
           trailing: Row(mainAxisSize: MainAxisSize.min, children: [
             IconButton(tooltip: 'مشاركة الاختبار', onPressed: questions is List && questions.isNotEmpty ? () => _shareTest(doc.id, data) : null,
               icon: const Icon(Icons.share_outlined)),
+            IconButton(tooltip: 'حذف الاختبار', onPressed: () => _deleteTest(doc.id),
+              icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB91C1C))),
             const Icon(Icons.play_arrow_rounded),
           ]),
           onTap: questions is List && questions.isNotEmpty ? () => showDialog<void>(context: context, builder: (_) => QuizRunner(title: (data['title'] ?? 'اختبار').toString(), questions: questions)) : null,
