@@ -17,7 +17,7 @@ class StudyRepository {
     String collectionName, {int limit = 60, bool activeOnly = true}
   ) async {
     _requireFirebase();
-    final safeLimit = limit.clamp(1, 100);
+    final safeLimit = limit.clamp(1, 100).toInt();
     try {
       Query<Map<String, dynamic>> query = _db.collection(collectionName);
       if (activeOnly) query = query.where('active', isEqualTo: true);
@@ -37,7 +37,7 @@ class StudyRepository {
     DocumentSnapshot<Map<String, dynamic>>? cursor,
   }) async {
     _requireFirebase();
-    final size = pageSize.clamp(1, 50);
+    final size = pageSize.clamp(1, 50).toInt();
     final needle = search.trim();
     try {
       Query<Map<String, dynamic>> query = _db.collection('resources').where('active', isEqualTo: true);
