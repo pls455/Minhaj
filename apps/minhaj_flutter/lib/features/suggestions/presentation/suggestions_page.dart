@@ -126,7 +126,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
         const SizedBox(height: 14),
         FilledButton.icon(onPressed: _sending ? null : () => _submit(user), icon: const Icon(Icons.send_rounded),
           label: Text(_sending ? 'جارٍ الإرسال...' : 'إرسال للمراجعة')),
-      ]))),
+      ])))),
       const SizedBox(height: 18),
       StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance.collection('suggestions').where('studentUid', isEqualTo: user.uid).limit(30).snapshots(),
