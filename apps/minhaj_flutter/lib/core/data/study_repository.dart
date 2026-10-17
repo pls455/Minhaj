@@ -19,10 +19,8 @@ class StudyRepository {
     _requireFirebase();
     final safeLimit = limit.clamp(1, 100).toInt();
     try {
-      Query<Map<String, dynamic>> query = _db.collection(collectionName);
-      if (activeOnly) query = query.where('active', isEqualTo: true);
-      final snapshot = await query.orderBy('order').limit(safeLimit).get();
-      return snapshot.docs.map(_asMap).toList(growable: false);
+      final snapshot = await _db.collection(collectionName).orderBy('order').limit(safeLimit).get();
+      return snapshot.docs.map(_asMap).where((row) => !activeOnly || row['active'] != false).toList(growable: false);
     } on FirebaseException catch (error) {
       if (error.code != 'failed-precondition' && error.code != 'invalid-argument') rethrow;
       final snapshot = await _db.collection(collectionName).limit(safeLimit).get();
