@@ -136,16 +136,59 @@ class _PublicTests extends StatelessWidget {
   );
 
   void _openRunner(BuildContext context, String title, List<dynamic> questions) {
-    showDialog<void>(context: context, builder: (_) => _QuizRunner(title: title, questions: questions));
+    showDialog<void>(context: context, builder: (_) => QuizRunner(title: title, questions: questions));
   }
 }
 
-class _MyTests extends StatelessWidget {
+class _MyTests extends StatefulWidget {
   const _MyTests({required this.user});
   final User user;
   @override
+  State<_MyTests> createState() => _MyTestsState();
+}
+
+class _MyTestsState extends State<_MyTests> {
+  Future<void> _shareTest(String testId, Map<String, dynamic> data) async {
+    final questions = data['questions'];
+    if (questions is! List || questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('هذا الاختبار لا يحتوي على أسئلة قابلة للمشاركة.')));
+      return;
+    }
+    try {
+      final db = FirebaseFirestore.instance;
+      final shareRef = db.collection('studentTestShares').doc(testId);
+      await shareRef.set({
+        'ownerId': widget.user.uid,
+        'testId': testId,
+        'title': (data['title'] ?? 'اختبار تدريبي').toString(),
+        'questions': questions,
+        'durationMinutes': data['durationMinutes'] ?? 0,
+        'passingScore': data['passingScore'] ?? 0,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      if (!mounted) return;
+      final link = Uri.base.replace(fragment: '/tests/shared/' + testId).toString();
+      await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+        title: const Text('رابط الاختبار جاهز'),
+        content: SelectableText(link, style: const TextStyle(height: 1.6)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إغلاق')),
+          FilledButton.icon(onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: link));
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الرابط.')));
+          }, icon: const Icon(Icons.copy_rounded), label: const Text('نسخ الرابط')),
+        ],
+      ));
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) => FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-    future: FirebaseFirestore.instance.collection('studentTests').where('ownerId', isEqualTo: user.uid).limit(50).get(),
+    future: FirebaseFirestore.instance.collection('studentTests').where('ownerId', isEqualTo: widget.user.uid).limit(50).get(),
     builder: (context, snapshot) {
       if (snapshot.hasError) return Text(firebaseErrorMessage(snapshot.error!));
       if (!snapshot.hasData) return const LinearProgressIndicator();
@@ -158,22 +201,26 @@ class _MyTests extends StatelessWidget {
           leading: const CircleAvatar(child: Icon(Icons.quiz_rounded)),
           title: Text((data['title'] ?? 'اختبار شخصي').toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
           subtitle: Text((questions is List ? questions.length : 0).toString() + ' سؤال'),
-          trailing: const Icon(Icons.play_arrow_rounded),
-          onTap: questions is List && questions.isNotEmpty ? () => showDialog<void>(context: context, builder: (_) => _QuizRunner(title: (data['title'] ?? 'اختبار').toString(), questions: questions)) : null,
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            IconButton(tooltip: 'مشاركة الاختبار', onPressed: questions is List && questions.isNotEmpty ? () => _shareTest(doc.id, data) : null,
+              icon: const Icon(Icons.share_outlined)),
+            const Icon(Icons.play_arrow_rounded),
+          ]),
+          onTap: questions is List && questions.isNotEmpty ? () => showDialog<void>(context: context, builder: (_) => QuizRunner(title: (data['title'] ?? 'اختبار').toString(), questions: questions)) : null,
         ));
       }).toList());
     },
   );
 }
 
-class _QuizRunner extends StatefulWidget {
-  const _QuizRunner({required this.title, required this.questions});
+class QuizRunner extends StatefulWidget {
+  const QuizRunner({required this.title, required this.questions});
   final String title;
   final List<dynamic> questions;
   @override
-  State<_QuizRunner> createState() => _QuizRunnerState();
+  State<QuizRunner> createState() => _QuizRunnerState();
 }
-class _QuizRunnerState extends State<_QuizRunner> {
+class _QuizRunnerState extends State<QuizRunner> {
   final Map<int, String> _answers = {};
   bool _finished = false;
   int _score = 0;
