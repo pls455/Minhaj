@@ -12,7 +12,9 @@ class SharedTestPage extends StatelessWidget {
   final String shareId;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+  Widget build(BuildContext context) {
+    if (!AuthService.isReady) return const AsyncStateView(icon: Icons.link_off_rounded, message: 'خدمة مشاركة الاختبارات تحتاج إعداد Firebase في هذه النسخة.');
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
     future: FirebaseFirestore.instance.collection('studentTestShares').doc(shareId).get(),
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
@@ -70,6 +72,7 @@ class SharedTestPage extends StatelessWidget {
       );
     },
   );
+  }
 
   Future<void> _copyTest(
     BuildContext context,
