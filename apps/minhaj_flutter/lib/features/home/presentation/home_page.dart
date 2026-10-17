@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/firebase_config.dart';
 
@@ -21,6 +22,34 @@ class HomePage extends StatelessWidget {
             ),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 58,
+                height: 58,
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: SvgPicture.asset(
+                  'assets/minhaj_logo.svg',
+                  fit: BoxFit.contain,
+                  semanticsLabel: 'شعار منهاج',
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'مِنهَاج',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 20),
             const Text('طريقك للتوجيهي، أوضح', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, height: 1.35)),
             const SizedBox(height: 10),
             const Text('مصادرك وموادك التعليمية في مكان واحد.', style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 16, height: 1.7)),
