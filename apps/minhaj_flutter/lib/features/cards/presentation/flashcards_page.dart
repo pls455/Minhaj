@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/auth/auth_service.dart';
@@ -119,6 +121,12 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
             if ((setData['description'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(setData['description'].toString())),
             FilledButton.icon(onPressed: cards.length >= 150 ? null : () => _addCard(setDoc.reference, cards.length),
               icon: const Icon(Icons.add_rounded), label: const Text('إضافة بطاقة')),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: cards.isEmpty ? null : () => _shareSet(user, setId, setData, setDoc.reference),
+              icon: const Icon(Icons.share_rounded),
+              label: const Text('إنشاء رابط مشاركة للمجموعة'),
+            ),
             if (cards.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('أضف أول بطاقة. اكتب السؤال بوضوح والإجابة بأسلوب يساعدك على التذكر.')),
             ...cards.map((card) => _FlashcardTile(
               data: card.data(),
@@ -181,6 +189,92 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
       await batch.commit();
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
+
+  Future<void> _shareSet(
+    User user,
+    String setId,
+    Map<String, dynamic> setData,
+    DocumentReference<Map<String, dynamic>> setRef,
+  ) async {
+    try {
+      final snapshot = await setRef.collection('cards').orderBy('createdAt').limit(150).get();
+      final shareCards = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return <String, dynamic>{
+          'question': (data['question'] ?? '').toString(),
+          'answer': (data['answer'] ?? '').toString(),
+          'difficulty': (data['difficulty'] ?? 'متوسط').toString(),
+          'tags': data['tags'] is List ? data['tags'] : <String>[],
+        };
+      }).where((card) =>
+        (card['question'] as String).isNotEmpty &&
+        (card['answer'] as String).isNotEmpty
+      ).toList();
+
+      if (shareCards.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('أضف بطاقات قبل إنشاء رابط المشاركة.')),
+          );
+        }
+        return;
+      }
+      final encoded = jsonEncode(shareCards);
+      if (utf8.encode(encoded).length > 700000) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('المجموعة كبيرة جدًا للمشاركة كرابط واحد. قسّمها إلى مجموعات أصغر.')),
+          );
+        }
+        return;
+      }
+
+      await FirebaseFirestore.instance.collection('studentFlashcardShares').doc(setId).set({
+        'ownerId': user.uid,
+        'title': (setData['title'] ?? 'مجموعة بطاقات').toString(),
+        'description': (setData['description'] ?? '').toString(),
+        'cardCount': shareCards.length,
+        'cards': shareCards,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+      final shareLink = Uri.base.replace(fragment: '/cards/shared/' + setId).toString();
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('رابط المشاركة جاهز'),
+          content: SelectableText(shareLink, style: const TextStyle(height: 1.6)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('إغلاق'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: shareLink));
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم نسخ رابط المشاركة.')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('نسخ الرابط'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(firebaseErrorMessage(error))),
+        );
+      }
     }
   }
 
