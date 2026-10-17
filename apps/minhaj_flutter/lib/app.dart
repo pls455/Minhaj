@@ -16,6 +16,7 @@ import 'features/schools/presentation/schools_page.dart';
 import 'features/shell/presentation/main_shell.dart';
 import 'features/suggestions/presentation/suggestions_page.dart';
 import 'features/tests/presentation/tests_page.dart';
+import 'features/tests/presentation/shared_test_page.dart';
 
 final _router = GoRouter(
   initialLocation: '/',
@@ -34,6 +35,7 @@ final _router = GoRouter(
         GoRoute(path: '/cards', builder: (context, state) => const FlashcardsPage()),
         GoRoute(path: '/cards/shared/:shareId', builder: (context, state) => SharedFlashcardsPage(shareId: state.pathParameters['shareId']!)),
         GoRoute(path: '/cards/:setId', builder: (context, state) => FlashcardsPage(setId: state.pathParameters['setId'])),
+        GoRoute(path: '/tests/shared/:shareId', builder: (context, state) => SharedTestPage(shareId: state.pathParameters['shareId']!)),
         GoRoute(path: '/tests', builder: (context, state) => const TestsPage()),
         GoRoute(path: '/suggestions', builder: (context, state) => const SuggestionsPage()),
         GoRoute(path: '/profile', builder: (context, state) => const ProfilePage()),
