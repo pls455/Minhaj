@@ -56,8 +56,19 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
           leading: const CircleAvatar(child: Icon(Icons.style_rounded)),
           title: Text((item['title'] ?? 'مجموعة بطاقات').toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
           subtitle: Text('${item['description'] ?? ''} • ${item['cardCount'] ?? 0} بطاقة'),
-          trailing: const Icon(Icons.chevron_left_rounded),
-          onTap: () => context.go('/cards/${item['id']}'),
+          trailing: PopupMenuButton<String>(
+            tooltip: 'خيارات المجموعة',
+            onSelected: (value) {
+              if (value == 'edit') _editSet(user, item);
+              if (value == 'delete') _deleteSet(user, item);
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'edit', child: Text('تعديل المجموعة')),
+              PopupMenuItem(value: 'delete', child: Text('حذف المجموعة')),
+            ],
+            child: const Icon(Icons.more_vert_rounded),
+          ),
+          onTap: () => context.go('/cards/' + item['id'].toString()),
         ))),
       ]);
     },
@@ -97,6 +108,79 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
     }
   }
 
+  Future<void> _editSet(User user, Map<String, dynamic> item) async {
+    final title = TextEditingController(text: (item['title'] ?? '').toString());
+    final description = TextEditingController(text: (item['description'] ?? '').toString());
+    final result = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تعديل المجموعة'),
+        content: SizedBox(width: 420, child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: title, autofocus: true, maxLength: 120, decoration: const InputDecoration(labelText: 'اسم المجموعة')),
+          const SizedBox(height: 8),
+          TextField(controller: description, maxLength: 500, maxLines: 2, decoration: const InputDecoration(labelText: 'وصف المجموعة')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, {'title': title.text.trim(), 'description': description.text.trim()}), child: const Text('حفظ')),
+        ],
+      ),
+    );
+    title.dispose();
+    description.dispose();
+    if (result == null || result['title']!.isEmpty || !mounted) return;
+    try {
+      await FirebaseFirestore.instance.collection('studentFlashcardSets').doc(item['id'].toString()).update({
+        'title': result['title'],
+        'description': result['description'],
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
+  Future<void> _deleteSet(User user, Map<String, dynamic> item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف المجموعة؟'),
+        content: const Text('سيتم حذف المجموعة وبطاقاتها. إذا أنشأت رابط مشاركة لها، فسيتم إيقافه أيضًا.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف المجموعة')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final db = FirebaseFirestore.instance;
+    final setRef = db.collection('studentFlashcardSets').doc(item['id'].toString());
+    try {
+      final cardSnapshot = await setRef.collection('cards').limit(151).get();
+      if (cardSnapshot.docs.length > 150) {
+        throw StateError('المجموعة تحتوي أكثر من 150 بطاقة، لذلك أوقفنا الحذف لتجنب ترك بطاقات يتيمة.');
+      }
+      final shareRef = db.collection('studentFlashcardShares').doc(item['id'].toString());
+      final share = await shareRef.get();
+      if (share.exists && share.data()?['ownerId'] != user.uid) {
+        throw StateError('تعذّر التحقق من ملكية رابط المشاركة. لم تُحذف المجموعة.');
+      }
+      final batch = db.batch();
+      for (final card in cardSnapshot.docs) {
+        batch.delete(card.reference);
+      }
+      if (share.exists) batch.delete(shareRef);
+      batch.delete(setRef);
+      await batch.commit();
+      if (mounted && GoRouterState.of(context).uri.path.startsWith('/cards/')) {
+        context.go('/cards');
+      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حذف المجموعة وبطاقاتها.')));
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
   Widget _setView(User user, String setId) => StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
     stream: FirebaseFirestore.instance.collection('studentFlashcardSets').doc(setId).snapshots(),
     builder: (context, setSnapshot) {
@@ -130,6 +214,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
             if (cards.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('أضف أول بطاقة. اكتب السؤال بوضوح والإجابة بأسلوب يساعدك على التذكر.')),
             ...cards.map((card) => _FlashcardTile(
               data: card.data(),
+              onEdit: () => _editCard(card.reference, setDoc.reference, card.data()),
               onDelete: () => _deleteCard(card.reference, setDoc.reference, cards.length),
             )),
           ]);
@@ -170,6 +255,61 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
         'tags': <String>[], 'createdAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp(),
       });
       batch.update(setRef, {'cardCount': count + 1, 'updatedAt': FieldValue.serverTimestamp()});
+      await batch.commit();
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+
+  Future<void> _editCard(
+    DocumentReference<Map<String, dynamic>> cardRef,
+    DocumentReference<Map<String, dynamic>> setRef,
+    Map<String, dynamic> data,
+  ) async {
+    final question = TextEditingController(text: (data['question'] ?? '').toString());
+    final answer = TextEditingController(text: (data['answer'] ?? '').toString());
+    String difficulty = (data['difficulty'] ?? 'متوسط').toString();
+    if (!const {'سهل', 'متوسط', 'صعب'}.contains(difficulty)) difficulty = 'متوسط';
+    final values = await showDialog<Map<String, String>?>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(builder: (dialogContext, setDialogState) => AlertDialog(
+        title: const Text('تعديل البطاقة'),
+        content: SizedBox(width: 440, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: question, autofocus: true, maxLength: 4000, maxLines: 3, decoration: const InputDecoration(labelText: 'السؤال أو المفهوم')),
+          const SizedBox(height: 8),
+          TextField(controller: answer, maxLength: 8000, maxLines: 4, decoration: const InputDecoration(labelText: 'الإجابة أو الشرح')),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: difficulty,
+            decoration: const InputDecoration(labelText: 'الصعوبة'),
+            items: const [
+              DropdownMenuItem(value: 'سهل', child: Text('سهل')),
+              DropdownMenuItem(value: 'متوسط', child: Text('متوسط')),
+              DropdownMenuItem(value: 'صعب', child: Text('صعب')),
+            ],
+            onChanged: (value) { if (value != null) setDialogState(() => difficulty = value); },
+          ),
+        ]))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, {
+            'question': question.text.trim(), 'answer': answer.text.trim(), 'difficulty': difficulty,
+          }), child: const Text('حفظ')),
+        ],
+      )),
+    );
+    question.dispose();
+    answer.dispose();
+    if (values == null || values['question']!.isEmpty || values['answer']!.isEmpty || !mounted) return;
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(cardRef, {
+        'question': values['question'],
+        'answer': values['answer'],
+        'difficulty': values['difficulty'],
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      batch.update(setRef, {'updatedAt': FieldValue.serverTimestamp()});
       await batch.commit();
     } catch (error) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
@@ -282,8 +422,9 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
 }
 
 class _FlashcardTile extends StatefulWidget {
-  const _FlashcardTile({required this.data, required this.onDelete});
+  const _FlashcardTile({required this.data, this.onEdit, this.onDelete});
   final Map<String, dynamic> data;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   @override
   State<_FlashcardTile> createState() => _FlashcardTileState();
@@ -301,6 +442,7 @@ class _FlashcardTileState extends State<_FlashcardTile> {
       Row(children: [
         Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => _showAnswer = !_showAnswer),
           icon: Icon(_showAnswer ? Icons.visibility_off_outlined : Icons.visibility_outlined), label: Text(_showAnswer ? 'إخفاء الإجابة' : 'عرض الإجابة'))),
+        if (widget.onEdit != null) IconButton(onPressed: widget.onEdit, tooltip: 'تعديل البطاقة', icon: const Icon(Icons.edit_outlined)),
         if (widget.onDelete != null) IconButton(onPressed: widget.onDelete, tooltip: 'حذف البطاقة', icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB91C1C))),
       ]),
     ])),
