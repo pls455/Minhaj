@@ -9,6 +9,7 @@ import 'features/library/presentation/library_page.dart';
 import 'features/auth/presentation/profile_page.dart';
 import 'features/branches/presentation/branches_page.dart';
 import 'features/cards/presentation/flashcards_page.dart';
+import 'features/cards/presentation/shared_flashcards_page.dart';
 import 'features/home/presentation/home_page.dart';
 import 'features/resources/presentation/resources_page.dart';
 import 'features/schools/presentation/schools_page.dart';
@@ -31,6 +32,7 @@ final _router = GoRouter(
         GoRoute(path: '/schools', builder: (context, state) => const SchoolsPage()),
         GoRoute(path: '/curriculum', builder: (context, state) => const LibraryPage(collectionName: 'curriculumUnits', title: 'الوحدات الدراسية')),
         GoRoute(path: '/cards', builder: (context, state) => const FlashcardsPage()),
+        GoRoute(path: '/cards/shared/:shareId', builder: (context, state) => SharedFlashcardsPage(shareId: state.pathParameters['shareId']!)),
         GoRoute(path: '/cards/:setId', builder: (context, state) => FlashcardsPage(setId: state.pathParameters['setId'])),
         GoRoute(path: '/tests', builder: (context, state) => const TestsPage()),
         GoRoute(path: '/suggestions', builder: (context, state) => const SuggestionsPage()),
