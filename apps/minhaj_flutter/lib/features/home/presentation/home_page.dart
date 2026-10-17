@@ -53,6 +53,8 @@ class HomePage extends StatelessWidget {
             _HomeTileData(Icons.bookmark_add_outlined, 'التأسيس', 'راجع المفاهيم والمواد الأساسية', '/foundations'),
             _HomeTileData(Icons.task_alt_rounded, 'الحلول', 'شروحات وحلول منشورة للطلاب', '/solutions'),
             _HomeTileData(Icons.auto_awesome_rounded, 'مساعد منهاج', 'اسأل عن مفهوم دراسي مع حد استخدام عادل', '/assistant'),
+            _HomeTileData(Icons.account_balance_rounded, 'دليل المدارس', 'ابحث عن مدرسة أو مديرية', '/schools'),
+            _HomeTileData(Icons.account_tree_rounded, 'الوحدات الدراسية', 'تصفح وحدات المنهاج المنشورة', '/curriculum'),
             _HomeTileData(Icons.person_rounded, 'حساب الطالب', 'الدخول وحفظ المحتوى الشخصي', '/profile'),
           ];
           return GridView.count(
