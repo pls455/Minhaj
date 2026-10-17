@@ -2,7 +2,7 @@
     <application
         android:label="مِنهَاج"
         android:name="${applicationName}"
-        android:icon="@drawable/minhaj_launcher">
+        android:icon="@drawable/app_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
