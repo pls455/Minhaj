@@ -44,7 +44,7 @@ class _AssistantPageState extends State<AssistantPage> {
         'windowStartedAt': expired ? FieldValue.serverTimestamp() : timestamp,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      return _Quota(allowed: true, remaining: 3 - next, resetAt: (expired ? now : started!).add(const Duration(days: 3)));
+      return _Quota(allowed: true, remaining: 3 - next, resetAt: (expired ? now : started).add(const Duration(days: 3)));
     });
   }
 
