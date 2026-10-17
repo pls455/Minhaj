@@ -68,7 +68,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
             ],
             child: const Icon(Icons.more_vert_rounded),
           ),
-          onTap: () => context.go('/cards/' + item['id'].toString()),
+          onTap: () => context.go('/cards/${item['id']}'),
         ))),
       ]);
     },
