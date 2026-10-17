@@ -74,7 +74,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
           TextField(controller: title, autofocus: true, maxLength: 120, decoration: const InputDecoration(labelText: 'اسم المجموعة')),
           const SizedBox(height: 8),
           TextField(controller: description, maxLength: 500, maxLines: 2, decoration: const InputDecoration(labelText: 'وصف اختياري')),
-        ])),
+        ]))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           FilledButton(onPressed: () => Navigator.pop(context, {'title': title.text.trim(), 'description': description.text.trim()}), child: const Text('إنشاء')),
