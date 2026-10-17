@@ -50,6 +50,9 @@ class HomePage extends StatelessWidget {
             _HomeTileData(Icons.style_rounded, 'بطاقاتي', 'أنشئ بطاقات للمراجعة والاستذكار', '/cards'),
             _HomeTileData(Icons.quiz_rounded, 'الاختبارات', 'اختبارات منشورة وتدريب شخصي', '/tests'),
             _HomeTileData(Icons.lightbulb_outline_rounded, 'اقترح مصدرًا', 'ساعد في تحسين مكتبة منهاج التعليمية', '/suggestions'),
+            _HomeTileData(Icons.bookmark_add_outlined, 'التأسيس', 'راجع المفاهيم والمواد الأساسية', '/foundations'),
+            _HomeTileData(Icons.task_alt_rounded, 'الحلول', 'شروحات وحلول منشورة للطلاب', '/solutions'),
+            _HomeTileData(Icons.auto_awesome_rounded, 'مساعد منهاج', 'اسأل عن مفهوم دراسي مع حد استخدام عادل', '/assistant'),
             _HomeTileData(Icons.person_rounded, 'حساب الطالب', 'الدخول وحفظ المحتوى الشخصي', '/profile'),
           ];
           return GridView.count(
