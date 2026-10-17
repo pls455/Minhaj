@@ -146,6 +146,8 @@ class _ResourceTile extends StatelessWidget {
         ]),
       ]),
     ));
+  }
+
   Future<void> _report(BuildContext context) async {
     final user = AuthService.currentUser;
     if (user == null) {
@@ -185,7 +187,5 @@ class _ResourceTile extends StatelessWidget {
     } catch (error) {
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
     }
-  }
-
   }
 }
