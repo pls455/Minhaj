@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/data/study_repository.dart';
-import '../../../core/widgets/async_state.dart';
 
 class AdminTools extends StatelessWidget {
   const AdminTools({super.key, required this.user, required this.role});
@@ -361,7 +360,19 @@ class _StudyContentEditorState extends State<_StudyContentEditor> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(initialValue: _branchId, isExpanded: true, decoration: const InputDecoration(labelText: 'الفرع'),
           items: widget.branches.map((x) => DropdownMenuItem(value: x['id'].toString(), child: Text((x['name'] ?? 'فرع').toString()))).toList(),
-          onChanged: (v) => setState(() => _branchId = v)),
+          onChanged: (v) => setState(() {
+            _branchId = v;
+            final compatible = widget.subjects.where((subject) =>
+              v == null ||
+              ((subject['branchIds'] is List &&
+                (subject['branchIds'] as List).map((id) => '$id').contains(v)) ||
+               (subject['branchId'] ?? '').toString() == v)
+            ).toList();
+            if (compatible.isNotEmpty &&
+                !compatible.any((subject) => subject['id'] == _subjectId)) {
+              _subjectId = compatible.first['id'].toString();
+            }
+          })),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(initialValue: _subjectId, isExpanded: true, decoration: const InputDecoration(labelText: 'المادة'),
           items: widget.subjects.where((x) => _branchId == null || ((x['branchIds'] is List && (x['branchIds'] as List).map((id) => '$id').contains(_branchId)) || (x['branchId'] ?? '').toString() == _branchId))
