@@ -24,7 +24,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
     }
     final user = AuthService.currentUser;
     if (user == null) {
-      return _LoginPrompt(message: 'سجّل الدخول حتى تنشئ مجموعات بطاقاتك وتحفظ مراجعتك.');
+      return const _PublicFlashcards();
     }
     if (widget.setId != null) return _setView(user, widget.setId!);
     return _setsView(user);
@@ -117,7 +117,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
               Expanded(child: Text((setData['title'] ?? 'مجموعة البطاقات').toString(), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
             ]),
             if ((setData['description'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(setData['description'].toString())),
-            FilledButton.icon(onPressed: cards.length >= 150 ? null : () => _addCard(user, setId, setDoc.reference, cards.length),
+            FilledButton.icon(onPressed: cards.length >= 150 ? null : () => _addCard(setDoc.reference, cards.length),
               icon: const Icon(Icons.add_rounded), label: const Text('إضافة بطاقة')),
             if (cards.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('أضف أول بطاقة. اكتب السؤال بوضوح والإجابة بأسلوب يساعدك على التذكر.')),
             ...cards.map((card) => _FlashcardTile(
@@ -130,7 +130,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
     },
   );
 
-  Future<void> _addCard(User user, String setId, DocumentReference<Map<String, dynamic>> setRef, int count) async {
+  Future<void> _addCard(DocumentReference<Map<String, dynamic>> setRef, int count) async {
     final question = TextEditingController(), answer = TextEditingController();
     String difficulty = 'متوسط';
     final values = await showDialog<Map<String, String>?>(
@@ -190,7 +190,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
 class _FlashcardTile extends StatefulWidget {
   const _FlashcardTile({required this.data, required this.onDelete});
   final Map<String, dynamic> data;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   @override
   State<_FlashcardTile> createState() => _FlashcardTileState();
 }
@@ -207,24 +207,10 @@ class _FlashcardTileState extends State<_FlashcardTile> {
       Row(children: [
         Expanded(child: OutlinedButton.icon(onPressed: () => setState(() => _showAnswer = !_showAnswer),
           icon: Icon(_showAnswer ? Icons.visibility_off_outlined : Icons.visibility_outlined), label: Text(_showAnswer ? 'إخفاء الإجابة' : 'عرض الإجابة'))),
-        IconButton(onPressed: widget.onDelete, tooltip: 'حذف البطاقة', icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB91C1C))),
+        if (widget.onDelete != null) IconButton(onPressed: widget.onDelete, tooltip: 'حذف البطاقة', icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFB91C1C))),
       ]),
     ])),
   );
-}
-
-class _LoginPrompt extends StatelessWidget {
-  const _LoginPrompt({required this.message});
-  final String message;
-  @override
-  Widget build(BuildContext context) => Center(child: Padding(
-    padding: const EdgeInsets.all(24),
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.lock_outline_rounded, size: 42, color: Color(0xFF0F766E)),
-      const SizedBox(height: 12), Text(message, textAlign: TextAlign.center, style: const TextStyle(height: 1.7)),
-      const SizedBox(height: 14), FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
-    ]),
-  ));
 }
 
 class _PublicFlashcards extends StatelessWidget {
@@ -250,7 +236,7 @@ class _PublicFlashcards extends StatelessWidget {
         const SizedBox(height: 6),
         const Text('يمكنك مراجعة البطاقات العامة دون حساب. سجّل الدخول لإنشاء مجموعاتك الخاصة.'),
         const SizedBox(height: 14),
-        ...cards.map((doc) => _FlashcardTile(data: doc.data(), onDelete: () {})),
+        ...cards.map((doc) => _FlashcardTile(data: doc.data(), onDelete: null)),
         const SizedBox(height: 14),
         OutlinedButton.icon(onPressed: () => context.go('/profile'), icon: const Icon(Icons.person_add_alt_1_rounded), label: const Text('سجّل الدخول لإنشاء بطاقاتك')),
       ]);
