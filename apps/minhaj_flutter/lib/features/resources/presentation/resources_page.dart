@@ -83,7 +83,7 @@ class _ResourcesPageState extends State<ResourcesPage> {
               const DropdownMenuItem(value: '', child: Text('كل الفروع')),
               ..._branches.map((item) => DropdownMenuItem(value: item['id'].toString(), child: Text((item['name'] ?? 'فرع').toString(), overflow: TextOverflow.ellipsis))),
             ],
-            onChanged: (value) { setState(() => _branchId = value == null || value.isEmpty ? null : value); _load(reset: true); },
+            onChanged: (value) { setState(() { _branchId = value == null || value.isEmpty ? null : value; _subjectId = null; }); _load(reset: true); },
           );
           final subject = DropdownButtonFormField<String>(
             value: _subjects.any((item) => item['id'] == _subjectId) ? _subjectId : null,
