@@ -28,7 +28,7 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
-    final title = location.startsWith('/admin') ? 'الإدارة' : location.startsWith('/assistant') ? 'مساعد منهاج' : location.startsWith('/foundations') ? 'التأسيس' : location.startsWith('/solutions') ? 'الحلول' : _destinations[_selectedIndex].label;
+    final title = location.startsWith('/admin') ? 'الإدارة' : location.startsWith('/assistant') ? 'مساعد منهاج' : location.startsWith('/foundations') ? 'التأسيس' : location.startsWith('/solutions') ? 'الحلول' : location.startsWith('/schools') ? 'دليل المدارس' : location.startsWith('/curriculum') ? 'الوحدات الدراسية' : _destinations[_selectedIndex].label;
     return Scaffold(
       appBar: AppBar(
         title: Row(children: [
