@@ -30,19 +30,22 @@ jobs:
       - name: Generate Android and Web platform scaffolding
         run: flutter create --project-name minhaj --org com.karam --platforms=android,web .
 
-      - name: Persist generated platform scaffolding on the development branch
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Apply safe Dart quick fixes
+        run: dart fix --apply
+
+      - name: Persist generated platform scaffolding and safe fixes
         if: (github.event_name == 'push' && github.ref == 'refs/heads/rebuild/flutter-platform-foundation') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'rebuild/flutter-platform-foundation')
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android web
+          git add android web lib test analysis_options.yaml pubspec.lock pubspec.yaml .metadata .gitignore
           if ! git diff --cached --quiet; then
-            git commit -m "build: generate Flutter Android and web scaffolding"
+            git commit -m "build: bootstrap Flutter platforms and apply safe analyzer fixes"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
-
-      - name: Install dependencies
-        run: flutter pub get
 
       - name: Analyze
         run: flutter analyze
