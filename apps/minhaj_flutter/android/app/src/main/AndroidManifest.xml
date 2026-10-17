@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="minhaj"
+        android:label="مِنهَاج"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@drawable/minhaj_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
