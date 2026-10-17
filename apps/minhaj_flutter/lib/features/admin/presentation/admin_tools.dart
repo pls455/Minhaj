@@ -68,7 +68,7 @@ class _AdminUsersManagerState extends State<AdminUsersManager> {
         'action': existing.exists ? 'update_admin' : 'create_admin',
         'collection': 'admins',
         'targetId': uid,
-        'details': 'role=' + newRole + '; active=' + active.toString(),
+        'details': 'role=$newRole; active=$active',
         'timestamp': FieldValue.serverTimestamp(),
       });
       await batch.commit();
@@ -421,7 +421,7 @@ Future<void> _writeAdminLog(String action, String collectionName, String targetI
     'action': action,
     'collection': collectionName,
     'targetId': targetId,
-    'details': action + ' ' + targetId,
+    'details': '$action $targetId',
     'timestamp': FieldValue.serverTimestamp(),
   });
 }
