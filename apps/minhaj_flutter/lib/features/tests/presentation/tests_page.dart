@@ -63,7 +63,7 @@ class _TestsPageState extends State<TestsPage> {
             items: List.generate(4, (index) => DropdownMenuItem(value: index, child: Text('الخيار ' + String.fromCharCode(65 + index)))),
             onChanged: (value) { if (value != null) setDialogState(() => correctIndex = value); },
           ),
-        ])),
+        ]))),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           FilledButton(onPressed: () {
