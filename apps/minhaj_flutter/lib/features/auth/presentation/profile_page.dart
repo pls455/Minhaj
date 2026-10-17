@@ -117,7 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
           try {
             await AuthService.signOut();
           } catch (error) {
-            if (!mounted) return;
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(firebaseErrorMessage(error))),
             );
