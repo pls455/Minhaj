@@ -6,6 +6,30 @@ import '../../../core/auth/auth_service.dart';
 import '../../../core/data/study_repository.dart';
 import '../../../core/widgets/async_state.dart';
 
+String _branchAsset(String name) {
+  final value = name.toLowerCase();
+  if (value.contains('علمي') || value.contains('scientific')) return 'assets/branch_scientific.png';
+  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/branch_literary.png';
+  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/branch_industrial.png';
+  return 'assets/minhaj-logo.png';
+}
+
+String _subjectAsset(String name) {
+  final value = name.toLowerCase();
+  if (value.contains('عربي') || value.contains('arabic')) return 'assets/subject_arabic.png';
+  if (value.contains('رياض') || value.contains('math')) return 'assets/subject_math.png';
+  if (value.contains('فيزياء') || value.contains('physics')) return 'assets/subject_physics.png';
+  if (value.contains('كيمياء') || value.contains('chemistry')) return 'assets/subject_chemistry.png';
+  if (value.contains('أحياء') || value.contains('احياء') || value.contains('biology')) return 'assets/subject_biology.png';
+  if (value.contains('إنجليزي') || value.contains('انجليزي') || value.contains('english')) return 'assets/subject_english.png';
+  if (value.contains('جغرافيا') || value.contains('geography')) return 'assets/subject_geography.png';
+  if (value.contains('تاريخ') || value.contains('history')) return 'assets/subject_history.png';
+  if (value.contains('إسلام') || value.contains('اسلام') || value.contains('islamic')) return 'assets/subject_islamic_education.png';
+  if (value.contains('تكنولوجيا') || value.contains('technology')) return 'assets/subject_technology.png';
+  if (value.contains('مهني') || value.contains('vocational')) return 'assets/subject_vocational.png';
+  return 'assets/minhaj-logo.png';
+}
+
 class ResourcesPage extends StatefulWidget {
   const ResourcesPage({super.key, this.initialBranchId});
   final String? initialBranchId;
@@ -86,7 +110,17 @@ class _ResourcesPageState extends State<ResourcesPage> {
             isExpanded: true, decoration: const InputDecoration(labelText: 'الفرع'),
             items: [
               const DropdownMenuItem(value: '', child: Text('كل الفروع')),
-              ..._branches.map((item) => DropdownMenuItem(value: item['id'].toString(), child: Text((item['name'] ?? 'فرع').toString(), overflow: TextOverflow.ellipsis))),
+              ..._branches.map((item) => DropdownMenuItem(
+                value: item['id'].toString(),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  ClipRRect(borderRadius: BorderRadius.circular(7), child: Image.asset(
+                    _branchAsset((item['name'] ?? 'فرع').toString()), width: 30, height: 30, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.school_outlined, size: 24),
+                  )),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text((item['name'] ?? 'فرع').toString(), overflow: TextOverflow.ellipsis)),
+                ]),
+              )),
             ],
             onChanged: (value) { setState(() { _branchId = value == null || value.isEmpty ? null : value; _subjectId = null; }); _load(reset: true); },
           );
@@ -97,7 +131,17 @@ class _ResourcesPageState extends State<ResourcesPage> {
               const DropdownMenuItem(value: '', child: Text('كل المواد')),
               ..._subjects.where((item) => _branchId == null ||
                 ((item['branchIds'] is List && (item['branchIds'] as List).map((e) => '$e').contains(_branchId)) || (item['branchId'] ?? '').toString() == _branchId))
-                .map((item) => DropdownMenuItem(value: item['id'].toString(), child: Text((item['name'] ?? 'مادة').toString(), overflow: TextOverflow.ellipsis))),
+                .map((item) => DropdownMenuItem(
+                value: item['id'].toString(),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  ClipRRect(borderRadius: BorderRadius.circular(7), child: Image.asset(
+                    _subjectAsset((item['name'] ?? 'مادة').toString()), width: 30, height: 30, fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, size: 24),
+                  )),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text((item['name'] ?? 'مادة').toString(), overflow: TextOverflow.ellipsis)),
+                ]),
+              )),
             ],
             onChanged: (value) { setState(() => _subjectId = value == null || value.isEmpty ? null : value); _load(reset: true); },
           );
