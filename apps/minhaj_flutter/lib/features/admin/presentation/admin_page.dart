@@ -51,6 +51,8 @@ class AdminPage extends StatelessWidget {
           if (canEdit) _ResourceManager(user: user),
           const SizedBox(height: 22),
           _ReviewQueue(user: user),
+          const SizedBox(height: 14),
+          _ProblemReportQueue(user: user),
         ]);
       },
     );
@@ -323,4 +325,59 @@ class _ReviewQueueState extends State<_ReviewQueue> {
       },
     ),
   ])));
+}
+
+class _ProblemReportQueue extends StatefulWidget {
+  const _ProblemReportQueue({required this.user});
+  final User user;
+  @override
+  State<_ProblemReportQueue> createState() => _ProblemReportQueueState();
+}
+class _ProblemReportQueueState extends State<_ProblemReportQueue> {
+  late Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _future;
+  @override
+  void initState() { super.initState(); _future = _load(); }
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _load() async {
+    final snapshot = await FirebaseFirestore.instance.collection('problemReports').where('status', isEqualTo: 'open').limit(50).get();
+    return snapshot.docs;
+  }
+  Future<void> _resolve(QueryDocumentSnapshot<Map<String, dynamic>> report) async {
+    try {
+      await report.reference.update({
+        'status': 'resolved',
+        'reviewerUid': widget.user.uid,
+        'resolvedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) setState(() => _future = _load());
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(firebaseErrorMessage(error))));
+    }
+  }
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Expanded(child: Text('بلاغات المصادر', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
+        IconButton(tooltip: 'تحديث', onPressed: () => setState(() => _future = _load()), icon: const Icon(Icons.refresh_rounded)),
+      ]),
+      FutureBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) return Text(firebaseErrorMessage(snapshot.error!));
+          if (!snapshot.hasData) return const LinearProgressIndicator();
+          final reports = snapshot.data!;
+          if (reports.isEmpty) return const Padding(padding: EdgeInsets.all(8), child: Text('لا توجد بلاغات مفتوحة.'));
+          return Column(children: reports.map((report) {
+            final data = report.data();
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text((data['sourceTitle'] ?? 'مصدر').toString()),
+              subtitle: Text((data['description'] ?? '').toString(), maxLines: 3, overflow: TextOverflow.ellipsis),
+              trailing: IconButton(tooltip: 'وضع علامة تمت المعالجة', onPressed: () => _resolve(report), icon: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF0F766E))),
+            );
+          }).toList());
+        },
+      ),
+    ])),
+  );
 }
