@@ -50,7 +50,7 @@ class AdminPage extends StatelessWidget {
           if (canManageStructure) CatalogManager(collectionName: 'categories', title: 'تصنيفات المحتوى'),
           if (canEdit) _ResourceManager(user: user),
           const SizedBox(height: 22),
-          _ReviewQueue(user: user),
+          _ReviewQueue(user: user, canPublish: canEdit),
           const SizedBox(height: 14),
           _ProblemReportQueue(user: user),
         ]);
@@ -273,8 +273,9 @@ class _ResourceEditorDialogState extends State<_ResourceEditorDialog> {
 }
 
 class _ReviewQueue extends StatefulWidget {
-  const _ReviewQueue({required this.user});
+  const _ReviewQueue({required this.user, required this.canPublish});
   final User user;
+  final bool canPublish;
   @override
   State<_ReviewQueue> createState() => _ReviewQueueState();
 }
