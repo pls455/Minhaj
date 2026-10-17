@@ -37,7 +37,7 @@ class HomePage extends StatelessWidget {
         Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
           const Icon(Icons.sync_rounded, color: Color(0xFF0F766E)),
           const SizedBox(width: 10),
-          Expanded(child: Text(firebaseSetupStatus, style: const TextStyle(fontSize: 13, height: 1.5))),
+          Expanded(child: Text(MinhajFirebaseConfig.statusLabel, style: const TextStyle(fontSize: 13, height: 1.5))),
         ]))),
         const SizedBox(height: 24),
         Text('ابدأ من هون', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF172554))),
