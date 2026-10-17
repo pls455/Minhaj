@@ -215,7 +215,7 @@ class _QuizRunnerState extends State<_QuizRunner> {
               title: Text(option),
             )),
           ]));
-        }))),
+        })))),
     actions: _finished ? [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))]
       : [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
           FilledButton(onPressed: () {
