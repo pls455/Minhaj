@@ -11,12 +11,16 @@ class AdminTools extends StatelessWidget {
 
   bool get _isSuperAdmin => const {'super_admin', 'superadmin', 'admin'}.contains(role);
   bool get _canEditContent => const {'content_admin', 'super_admin', 'superadmin', 'admin'}.contains(role);
+  bool get _canReview => const {'reviewer', 'content_admin', 'super_admin', 'superadmin', 'admin'}.contains(role);
 
   @override
   Widget build(BuildContext context) => Column(children: [
+    if (_canReview) SourceRegistryManager(user: user),
+    if (_canEditContent) StudyContentManager(collectionName: 'curriculumUnits', title: 'إدارة الوحدات الدراسية', user: user, role: role),
     if (_canEditContent) StudyContentManager(collectionName: 'foundations', title: 'إدارة التأسيس', user: user, role: role),
     if (_canEditContent) StudyContentManager(collectionName: 'solutions', title: 'إدارة الحلول', user: user, role: role),
     if (_isSuperAdmin) AdminUsersManager(user: user, currentRole: role),
+    if (_isSuperAdmin) StudentDirectoryManager(),
     if (_isSuperAdmin) const AdminLogsManager(),
   ]);
 }
@@ -424,4 +428,149 @@ Future<void> _writeAdminLog(String action, String collectionName, String targetI
     'details': '$action $targetId',
     'timestamp': FieldValue.serverTimestamp(),
   });
+}
+
+
+class SourceRegistryManager extends StatefulWidget {
+  const SourceRegistryManager({super.key, required this.user});
+  final User user;
+  @override
+  State<SourceRegistryManager> createState() => _SourceRegistryManagerState();
+}
+class _SourceRegistryManagerState extends State<SourceRegistryManager> {
+  String _filter = 'all';
+
+  Future<void> _setReviewState(
+    QueryDocumentSnapshot<Map<String, dynamic>> document,
+    bool needsReview,
+  ) async {
+    try {
+      await document.reference.update({
+        'needsReview': needsReview,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'reviewedBy': widget.user.uid,
+        if (!needsReview) 'reviewedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(needsReview ? 'أعيد المصدر إلى قائمة المراجعة.' : 'تم تعليم المصدر كمُراجع.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(firebaseErrorMessage(error))),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 14),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('سجل المصادر المستوردة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        const Text('مراجعة بيانات المصدر وحالة التصنيف. لا يتم نشر ملفات السجل تلقائيًا من هذه الشاشة.'),
+        const SizedBox(height: 10),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'all', label: Text('الكل')),
+            ButtonSegment(value: 'review', label: Text('تحتاج مراجعة')),
+            ButtonSegment(value: 'conflict', label: Text('تعارض تصنيف')),
+          ],
+          selected: {_filter},
+          onSelectionChanged: (values) => setState(() => _filter = values.first),
+        ),
+        const SizedBox(height: 8),
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance.collection('sourceRegistry').limit(100).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) return Text(firebaseErrorMessage(snapshot.error!));
+            if (!snapshot.hasData) return const LinearProgressIndicator();
+            final rows = snapshot.data!.docs.where((doc) {
+              final data = doc.data();
+              if (_filter == 'review') return data['needsReview'] == true;
+              if (_filter == 'conflict') return data['classificationConflict'] == true;
+              return true;
+            }).toList();
+            if (rows.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('لا توجد سجلات تطابق هذا الفلتر ضمن السجلات المحمّلة.'),
+              );
+            }
+            return Column(children: rows.map((doc) {
+              final data = doc.data();
+              final title = (data['title'] ?? data['originalTitle'] ?? 'مصدر بلا عنوان').toString();
+              final url = (data['url'] ?? '').toString();
+              final pending = data['needsReview'] == true;
+              final conflict = data['classificationConflict'] == true;
+              final subtitle = [
+                (data['provider'] ?? data['sourceType'] ?? '').toString(),
+                (data['status'] ?? '').toString(),
+                if (conflict) 'تعارض تصنيف',
+                if (pending) 'تحتاج مراجعة',
+              ].where((part) => part.isNotEmpty).join(' • ');
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  conflict ? Icons.warning_amber_rounded : pending ? Icons.rate_review_outlined : Icons.inventory_2_outlined,
+                  color: conflict ? const Color(0xFFB45309) : pending ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                ),
+                title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(subtitle.isEmpty ? url : subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+                trailing: PopupMenuButton<String>(
+                  onSelected: (value) => _setReviewState(doc, value == 'review'),
+                  itemBuilder: (context) => [
+                    if (pending) const PopupMenuItem(value: 'done', child: Text('تمت المراجعة')),
+                    if (!pending) const PopupMenuItem(value: 'review', child: Text('إعادة للمراجعة')),
+                  ],
+                ),
+              );
+            }).toList());
+          },
+        ),
+      ]),
+    ),
+  );
+}
+
+class StudentDirectoryManager extends StatelessWidget {
+  const StudentDirectoryManager({super.key});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 14),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('دليل حسابات الطلاب', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        const Text('عرض محدود لآخر حسابات الطلاب. لا تعرض هذه الشاشة أرقام الهوية.'),
+        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).limit(100).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) return Text(firebaseErrorMessage(snapshot.error!));
+            if (!snapshot.hasData) return const LinearProgressIndicator();
+            final docs = snapshot.data!.docs;
+            if (docs.isEmpty) return const Padding(padding: EdgeInsets.only(top: 8), child: Text('لا توجد حسابات طلاب ظاهرة.'));
+            return Column(children: docs.map((doc) {
+              final data = doc.data();
+              final name = (data['name'] ?? 'طالب').toString();
+              final email = (data['email'] ?? '').toString();
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(child: Icon(Icons.person_outline_rounded)),
+                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Text(email, maxLines: 1, overflow: TextOverflow.ellipsis),
+              );
+            }).toList());
+          },
+        ),
+      ]),
+    ),
+  );
 }
