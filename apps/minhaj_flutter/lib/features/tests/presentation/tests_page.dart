@@ -209,11 +209,17 @@ class _QuizRunnerState extends State<_QuizRunner> {
             const SizedBox(height: 7),
             Text(_questionText(item), style: const TextStyle(height: 1.6)),
             if (options.isEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('نوع السؤال غير مدعوم في شاشة التدريب الحالية.')),
-            ...options.map((option) => RadioListTile<String>(
-              contentPadding: EdgeInsets.zero, value: option, groupValue: _answers[index],
-              onChanged: (value) { if (value != null) setState(() => _answers[index] = value); },
-              title: Text(option),
-            )),
+            if (options.isNotEmpty) RadioGroup<String>(
+              groupValue: _answers[index],
+              onChanged: (value) {
+                if (value != null) setState(() => _answers[index] = value);
+              },
+              child: Column(children: options.map((option) => RadioListTile<String>(
+                contentPadding: EdgeInsets.zero,
+                value: option,
+                title: Text(option),
+              )).toList()),
+            ),
           ]));
         })))),
     actions: _finished ? [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))]
