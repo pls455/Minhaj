@@ -7,6 +7,7 @@ import '../../../core/auth/auth_service.dart';
 import '../../../core/data/study_repository.dart';
 import '../../../core/widgets/async_state.dart';
 import 'catalog_admin.dart';
+import 'admin_tools.dart';
 
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key});
@@ -52,6 +53,7 @@ class AdminPage extends StatelessWidget {
           if (canManageStructure) CatalogManager(collectionName: 'branches', title: 'الفروع الدراسية'),
           if (canEdit) CatalogManager(collectionName: 'subjects', title: 'المواد الدراسية'),
           if (canManageStructure) CatalogManager(collectionName: 'categories', title: 'تصنيفات المحتوى'),
+          if (canEdit) AdminTools(user: user, role: role),
           if (canEdit) _ResourceManager(user: user),
           const SizedBox(height: 22),
           _ReviewQueue(user: user, canPublish: canEdit),
