@@ -67,7 +67,7 @@ class SharedTestPage extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          const Text('الاختبار المشترك للتدريب فقط. النتيجة تظهر في الجلسة ولا تُحفظ كسجل علامة رسمي.', style: TextStyle(color: Color(0xFF64748B), height: 1.7)),
+          const Text('الاختبار المشترك للتدريب فقط. النتيجة تظهر في الجلسة ولا تُحفظ كسجل علامة رسمي.', style: TextStyle(color: Color(0xFF58655F), height: 1.7)),
         ],
       );
     },

@@ -13,7 +13,7 @@ class AsyncStateView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 40, color: const Color(0xFF64748B)),
+          Icon(icon, size: 40, color: const Color(0xFF58655F)),
           const SizedBox(height: 14),
           Text(message, textAlign: TextAlign.center, style: const TextStyle(height: 1.7)),
           if (onRetry != null) ...[

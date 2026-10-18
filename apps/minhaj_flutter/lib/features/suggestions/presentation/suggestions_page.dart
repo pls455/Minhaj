@@ -87,7 +87,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
     if (user == null) {
       return Center(child: Padding(
       padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.lightbulb_outline_rounded, size: 42, color: Color(0xFF0F766E)),
+        const Icon(Icons.lightbulb_outline_rounded, size: 42, color: Color(0xFF173F35)),
         const SizedBox(height: 12), const Text('سجّل الدخول حتى نربط الاقتراح باسم حسابك ونمنع الإرسال المجهول للمصادر.', textAlign: TextAlign.center),
         const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
       ]),
@@ -124,7 +124,7 @@ class _SuggestionsPageState extends State<SuggestionsPage> {
           onChanged: (value) => setState(() => _subjectId = value),
         ),
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C)))),
-        if (_success != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_success!, style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w700))),
+        if (_success != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_success!, style: const TextStyle(color: Color(0xFF173F35), fontWeight: FontWeight.w700))),
         const SizedBox(height: 14),
         FilledButton.icon(onPressed: _sending ? null : () => _submit(user), icon: const Icon(Icons.send_rounded),
           label: Text(_sending ? 'جارٍ الإرسال...' : 'إرسال للمراجعة')),

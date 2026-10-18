@@ -279,7 +279,7 @@ class _QuizRunnerState extends State<QuizRunner> {
     title: Text(_finished ? 'نتيجة الاختبار' : widget.title),
     content: SizedBox(width: 540, child: SingleChildScrollView(child: _finished
       ? Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.emoji_events_outlined, size: 46, color: Color(0xFF0F766E)),
+          const Icon(Icons.emoji_events_outlined, size: 46, color: Color(0xFF173F35)),
           const SizedBox(height: 12),
           Text('نتيجتك: $_score من ${widget.questions.length}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
           const SizedBox(height: 8),
@@ -289,7 +289,7 @@ class _QuizRunnerState extends State<QuizRunner> {
           final item = widget.questions[index];
           final options = _options(item);
           return Padding(padding: const EdgeInsets.only(bottom: 18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('السؤال ${index + 1}', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
+            Text('السؤال ${index + 1}', style: const TextStyle(color: Color(0xFF173F35), fontWeight: FontWeight.w800)),
             const SizedBox(height: 7),
             Text(_questionText(item), style: const TextStyle(height: 1.6)),
             if (options.isEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('نوع السؤال غير مدعوم في شاشة التدريب الحالية.')),
