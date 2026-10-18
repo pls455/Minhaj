@@ -32,14 +32,14 @@ class MainShell extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Row(children: [
-          const Icon(Icons.menu_book_rounded, color: Color(0xFF0F766E)),
+          const Icon(Icons.menu_book_rounded, color: Color(0xFF173F35)),
           const SizedBox(width: 10),
           Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
         ]),
         actions: [Padding(
           padding: const EdgeInsetsDirectional.only(end: 16),
           child: Center(child: Text('MINHAJ', style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: const Color(0xFF64748B), fontWeight: FontWeight.w800, letterSpacing: 1.1,
+            color: const Color(0xFF58655F), fontWeight: FontWeight.w800, letterSpacing: 1.1,
           ))),
         )],
       ),

@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             gradient: const LinearGradient(
               begin: Alignment.topRight, end: Alignment.bottomLeft,
-              colors: [Color(0xFF172554), Color(0xFF0F766E)],
+              colors: [Color(0xFF173F35), Color(0xFF173F35)],
             ),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -56,7 +56,7 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 22),
             FilledButton.icon(
               onPressed: () => context.go('/resources'),
-              style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF172554), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
+              style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF173F35), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
               icon: const Icon(Icons.arrow_back_rounded),
               label: const Text('استكشف المصادر'),
             ),
@@ -64,12 +64,12 @@ class HomePage extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
-          const Icon(Icons.sync_rounded, color: Color(0xFF0F766E)),
+          const Icon(Icons.sync_rounded, color: Color(0xFF173F35)),
           const SizedBox(width: 10),
           Expanded(child: Text(MinhajFirebaseConfig.statusLabel, style: const TextStyle(fontSize: 13, height: 1.5))),
         ]))),
         const SizedBox(height: 24),
-        Text('ابدأ من هون', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF172554))),
+        Text('ابدأ من هون', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFF173F35))),
         const SizedBox(height: 14),
         LayoutBuilder(builder: (context, constraints) {
           final columns = constraints.maxWidth >= 900 ? 3 : constraints.maxWidth >= 540 ? 2 : 1;
@@ -94,7 +94,7 @@ class HomePage extends StatelessWidget {
           );
         }),
         const SizedBox(height: 20),
-        const Text('بيانات الطلاب والمحتوى تُحمّل من Firebase بعد إعداد المشروع. الأقسام التي تعتمد على الخدمات لا تستخدم بيانات وهمية.', style: TextStyle(color: Color(0xFF64748B), height: 1.7)),
+        const Text('بيانات الطلاب والمحتوى تُحمّل من Firebase بعد إعداد المشروع. الأقسام التي تعتمد على الخدمات لا تستخدم بيانات وهمية.', style: TextStyle(color: Color(0xFF58655F), height: 1.7)),
       ],
     );
   }
@@ -115,13 +115,13 @@ class _HomeTile extends StatelessWidget {
       onTap: () => context.go(item.path),
       borderRadius: BorderRadius.circular(20),
       child: Padding(padding: const EdgeInsets.all(18), child: Row(children: [
-        Container(width: 46, height: 46, decoration: BoxDecoration(color: const Color(0xFFE6F4F1), borderRadius: BorderRadius.circular(14)),
-          child: Icon(item.icon, color: const Color(0xFF0F766E))),
+        Container(width: 46, height: 46, decoration: BoxDecoration(color: const Color(0xFFE8EFE9), borderRadius: BorderRadius.circular(14)),
+          child: Icon(item.icon, color: const Color(0xFF173F35))),
         const SizedBox(width: 14),
         Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF172554))),
+          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF173F35))),
           const SizedBox(height: 4),
-          Text(item.subtitle, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, height: 1.5)),
+          Text(item.subtitle, style: const TextStyle(color: Color(0xFF58655F), fontSize: 12, height: 1.5)),
         ])),
         const Icon(Icons.chevron_left_rounded),
       ])),

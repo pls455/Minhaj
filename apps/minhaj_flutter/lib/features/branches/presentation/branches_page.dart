@@ -72,8 +72,8 @@ class _BranchesPageState extends State<BranchesPage> {
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           width: 72, height: 72,
-                          color: const Color(0xFFE6F4F1),
-                          child: const Icon(Icons.school_rounded, color: Color(0xFF0F766E), size: 30),
+                          color: const Color(0xFFE8EFE9),
+                          child: const Icon(Icons.school_rounded, color: Color(0xFF173F35), size: 30),
                         ),
                       ),
                     ),
@@ -81,7 +81,7 @@ class _BranchesPageState extends State<BranchesPage> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                       const SizedBox(height: 4),
-                      Text('${branchSubjects.length} مادة ظاهرة', style: const TextStyle(color: Color(0xFF64748B))),
+                      Text('${branchSubjects.length} مادة ظاهرة', style: const TextStyle(color: Color(0xFF58655F))),
                       if ((branch['description'] ?? '').toString().trim().isNotEmpty) ...[
                         const SizedBox(height: 5),
                         Text(branch['description'].toString(), maxLines: 2, overflow: TextOverflow.ellipsis),

@@ -150,7 +150,7 @@ class _ResourcesPageState extends State<ResourcesPage> {
         const SizedBox(height: 18),
         if (_error != null) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C)))),
         if (_items.isEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 36), child: Column(children: [
-          Icon(Icons.search_off_rounded, size: 42, color: Color(0xFF94A3B8)), SizedBox(height: 12),
+          Icon(Icons.search_off_rounded, size: 42, color: Color(0xFF87958D)), SizedBox(height: 12),
           Text('ما لقينا مصادر مطابقة. جرّب تغيير كلمة البحث أو الفلاتر.'),
         ])),
         ..._items.map((item) => _ResourceTile(item: item)),
@@ -173,12 +173,12 @@ class _ResourceTile extends StatelessWidget {
     return Card(margin: const EdgeInsets.only(bottom: 12), child: Padding(padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFFE6F4F1), borderRadius: BorderRadius.circular(13)),
-            child: Icon(type.toLowerCase().contains('video') ? Icons.play_circle_outline_rounded : Icons.description_outlined, color: const Color(0xFF0F766E))),
+          Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFFE8EFE9), borderRadius: BorderRadius.circular(13)),
+            child: Icon(type.toLowerCase().contains('video') ? Icons.play_circle_outline_rounded : Icons.description_outlined, color: const Color(0xFF173F35))),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text((item['title'] ?? 'مصدر تعليمي').toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-            const SizedBox(height: 4), Text(type, style: const TextStyle(color: Color(0xFF0F766E), fontSize: 12, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4), Text(type, style: const TextStyle(color: Color(0xFF173F35), fontSize: 12, fontWeight: FontWeight.w700)),
           ])),
         ]),
         if ((item['description'] ?? '').toString().trim().isNotEmpty) ...[

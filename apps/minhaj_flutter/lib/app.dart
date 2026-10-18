@@ -50,8 +50,10 @@ class MinhajApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const navy = Color(0xFF172554);
-    const teal = Color(0xFF0F766E);
+    const forest = Color(0xFF173F35);
+    const gold = Color(0xFFC5A46D);
+    const ivory = Color(0xFFF6F3EA);
+    const charcoal = Color(0xFF26332F);
     return ProviderScope(
       child: MaterialApp.router(
         title: 'مِنهَاج | MINHAJ',
@@ -64,23 +66,36 @@ class MinhajApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: teal, primary: navy, secondary: teal, surface: const Color(0xFFF7F9FC),
+            seedColor: forest, primary: forest, secondary: gold, surface: ivory,
           ),
-          scaffoldBackgroundColor: const Color(0xFFF7F9FC),
+          scaffoldBackgroundColor: ivory,
           appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFFF7F9FC), foregroundColor: navy, centerTitle: false,
+            backgroundColor: ivory, foregroundColor: forest, centerTitle: false,
+          ),
+          textTheme: ThemeData.light().textTheme.apply(bodyColor: charcoal, displayColor: forest),
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: forest,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+          navigationBarTheme: const NavigationBarThemeData(
+            backgroundColor: Colors.white,
+            indicatorColor: Color(0xFFE8EFE9),
           ),
           cardTheme: CardThemeData(
             elevation: 0, color: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Color(0xFFE5EAF2)),
+              side: const BorderSide(color: Color(0xFFE5E0D5)),
             ),
           ),
           inputDecorationTheme: InputDecorationTheme(
             filled: true, fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE5EAF2))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE5EAF2))),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE5E0D5))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE5E0D5))),
           ),
         ),
       ),

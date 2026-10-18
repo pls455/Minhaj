@@ -98,7 +98,7 @@ class _AssistantPageState extends State<AssistantPage> {
     if (AuthService.currentUser == null) {
       return Center(child: Padding(
       padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.auto_awesome_rounded, size: 44, color: Color(0xFF0F766E)),
+        const Icon(Icons.auto_awesome_rounded, size: 44, color: Color(0xFF173F35)),
         const SizedBox(height: 12), const Text('للاستخدام العادل وحفظ حد الأسئلة، سجّل الدخول أولًا.', textAlign: TextAlign.center),
         const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('تسجيل الدخول')),
       ]),
@@ -106,14 +106,14 @@ class _AssistantPageState extends State<AssistantPage> {
     }
     return Column(children: [
       Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 8), child: Row(children: [
-        const Icon(Icons.auto_awesome_rounded, color: Color(0xFF0F766E)),
+        const Icon(Icons.auto_awesome_rounded, color: Color(0xFF173F35)),
         const SizedBox(width: 8),
         const Expanded(child: Text('مساعد منهاج', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
-        if (_remaining != null) Text('متبقي $_remaining/3', style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+        if (_remaining != null) Text('متبقي $_remaining/3', style: const TextStyle(color: Color(0xFF58655F), fontSize: 12)),
       ])),
       if (_resetAt != null) Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Align(
         alignment: AlignmentDirectional.centerStart,
-        child: Text('يتجدد الحد في ${_formatDate(_resetAt!)}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+        child: Text('يتجدد الحد في ${_formatDate(_resetAt!)}', style: const TextStyle(fontSize: 11, color: Color(0xFF58655F))),
       )),
       Expanded(child: ListView.builder(
         controller: _scroll, padding: const EdgeInsets.all(16),
@@ -135,9 +135,9 @@ class _AssistantPageState extends State<AssistantPage> {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: message.isUser ? const Color(0xFFE6F4F1) : Colors.white,
+                color: message.isUser ? const Color(0xFFE8EFE9) : Colors.white,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFE5EAF2)),
+                border: Border.all(color: const Color(0xFFE5E0D5)),
               ),
               child: SelectableText(message.text, style: const TextStyle(height: 1.7)),
             ),
