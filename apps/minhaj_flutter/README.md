@@ -31,6 +31,12 @@ To override the defaults for a different build, pass `FIREBASE_API_KEY`, `FIREBA
 
 Firebase client configuration is expected to be present in a client app. It does not grant administrator access by itself. Firestore Rules and Firebase Authentication must enforce permissions. Never commit service-account JSON, private service-account keys, admin credentials, or AI-provider secrets.
 
+## Brand and delivery notes
+
+The app uses the MINHAJ brand palette: forest green `#173F35`, warm ivory `#F6F3EA`, sand gold `#C5A46D`, and charcoal green `#26332F`. The Android launcher icon and web app metadata use the same identity.
+
+The Android release build is **not store-ready until it is signed with your own release keystore**. Never commit the keystore or passwords. Configure signing privately in the build environment before producing a distributable APK/AAB. The CI APK is a debug preview, not a store release.
+
 ## Current features
 
 - Arabic RTL responsive shell and navigation

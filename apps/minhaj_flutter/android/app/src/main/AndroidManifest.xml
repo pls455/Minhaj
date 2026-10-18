@@ -1,8 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="مِنهَاج"
         android:name="${applicationName}"
-        android:icon="@drawable/app_icon">
+        android:icon="@drawable/minhaj_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"
