@@ -1,0 +1,81 @@
+name: MINHAJ Flutter CI
+
+on:
+  push:
+    branches:
+      - rebuild/flutter-platform-foundation
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  legacy-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check legacy site integrity
+        run: node tests/smoke-test.mjs
+      - name: Check AI worker contract
+        run: node tests/ai-contract-test.mjs
+
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/minhaj_flutter
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set up Python for image optimization
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate optimized WebP image assets
+        run: |
+          python -m pip install --disable-pip-version-check Pillow
+          python ../../tools/optimize_app_assets.py
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build web preview
+        run: flutter build web --release
+
+      - name: Build Android preview APK
+        run: flutter build apk --debug
+
+      - name: Upload preview builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: minhaj-preview-builds
+          path: |
+            apps/minhaj_flutter/build/app/outputs/flutter-apk/app-debug.apk
+            apps/minhaj_flutter/build/web
+          if-no-files-found: error
+          retention-days: 7

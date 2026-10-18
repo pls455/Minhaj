@@ -1,0 +1,19 @@
+{
+  "name": "مِنهَاج | MINHAJ",
+  "short_name": "منهاج",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6F3EA",
+  "theme_color": "#173F35",
+  "description": "منصة منهاج التعليمية لطلاب التوجيهي الفلسطيني.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/minhaj.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
