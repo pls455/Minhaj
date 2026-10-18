@@ -94,7 +94,7 @@ class _CatalogManagerState extends State<CatalogManager> {
         FilledButton.tonalIcon(onPressed: () => _edit(), icon: const Icon(Icons.add_rounded), label: const Text('إضافة')),
       ]),
       const SizedBox(height: 5),
-      Text(_description, style: const TextStyle(color: Color(0xFF64748B), height: 1.5)),
+      Text(_description, style: const TextStyle(color: Color(0xFF58655F), height: 1.5)),
       StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance.collection(widget.collectionName).orderBy('order').limit(50).snapshots(),
         builder: (context, snapshot) {
@@ -108,7 +108,7 @@ class _CatalogManagerState extends State<CatalogManager> {
             final active = data['active'] != false;
             return ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(_icon, color: active ? const Color(0xFF0F766E) : const Color(0xFF94A3B8)),
+              leading: Icon(_icon, color: active ? const Color(0xFF173F35) : const Color(0xFF87958D)),
               title: Text((data['name'] ?? 'عنصر').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(active ? (data['stableId'] ?? data['description'] ?? '').toString() : 'غير نشط'),
               onTap: () => _edit(item: item),

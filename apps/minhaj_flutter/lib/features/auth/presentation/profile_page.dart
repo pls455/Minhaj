@@ -67,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Card(child: Padding(
         padding: const EdgeInsets.all(22),
         child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Icon(Icons.account_circle_rounded, size: 48, color: Color(0xFF0F766E)),
+          const Icon(Icons.account_circle_rounded, size: 48, color: Color(0xFF173F35)),
           const SizedBox(height: 10),
           Text(_registerMode ? 'إنشاء حساب طالب' : 'تسجيل الدخول', textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
@@ -105,7 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             const SizedBox(height: 4),
-            Text(user.email ?? '', style: const TextStyle(color: Color(0xFF64748B))),
+            Text(user.email ?? '', style: const TextStyle(color: Color(0xFF58655F))),
           ])),
         ]))),
         const SizedBox(height: 14),

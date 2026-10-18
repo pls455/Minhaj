@@ -163,7 +163,7 @@ class _ResourceManagerState extends State<_ResourceManager> {
             final item = <String, dynamic>{'id': doc.id, ...data};
             return ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(active ? Icons.link_rounded : Icons.link_off_rounded, color: active ? const Color(0xFF0F766E) : const Color(0xFF94A3B8)),
+              leading: Icon(active ? Icons.link_rounded : Icons.link_off_rounded, color: active ? const Color(0xFF173F35) : const Color(0xFF87958D)),
               title: Text((data['title'] ?? 'مصدر').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(active ? (data['url'] ?? '').toString() : 'مخفي عن الطلاب'),
               trailing: PopupMenuButton<String>(
@@ -462,7 +462,7 @@ class _ProblemReportQueueState extends State<_ProblemReportQueue> {
               contentPadding: EdgeInsets.zero,
               title: Text((data['sourceTitle'] ?? 'مصدر').toString()),
               subtitle: Text((data['description'] ?? '').toString(), maxLines: 3, overflow: TextOverflow.ellipsis),
-              trailing: IconButton(tooltip: 'وضع علامة تمت المعالجة', onPressed: () => _resolve(report), icon: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF0F766E))),
+              trailing: IconButton(tooltip: 'وضع علامة تمت المعالجة', onPressed: () => _resolve(report), icon: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF173F35))),
             );
           }).toList());
         },

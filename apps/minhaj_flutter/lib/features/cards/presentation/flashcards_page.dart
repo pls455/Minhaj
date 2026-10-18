@@ -49,7 +49,7 @@ class _FlashcardsPageState extends State<FlashcardsPage> {
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C)))),
         const SizedBox(height: 14),
         if (sets.isEmpty) const Padding(padding: EdgeInsets.all(28), child: Column(children: [
-          Icon(Icons.style_outlined, size: 42, color: Color(0xFF94A3B8)),
+          Icon(Icons.style_outlined, size: 42, color: Color(0xFF87958D)),
           SizedBox(height: 10), Text('لسه ما أنشأت أي مجموعة بطاقات. ابدأ بمجموعة واحدة لمادة بتراجعها.'),
         ])),
         ...sets.map((item) => Card(margin: const EdgeInsets.only(bottom: 10), child: ListTile(
@@ -435,7 +435,7 @@ class _FlashcardTileState extends State<_FlashcardTile> {
   Widget build(BuildContext context) => Card(
     margin: const EdgeInsets.only(top: 10),
     child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(_showAnswer ? 'الإجابة' : 'السؤال', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.w800)),
+      Text(_showAnswer ? 'الإجابة' : 'السؤال', style: const TextStyle(color: Color(0xFF173F35), fontWeight: FontWeight.w800)),
       const SizedBox(height: 7),
       Text((_showAnswer ? widget.data['answer'] : widget.data['question']).toString(), style: const TextStyle(height: 1.65)),
       const SizedBox(height: 12),
@@ -463,7 +463,7 @@ class _PublicFlashcards extends StatelessWidget {
         return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.style_outlined, size: 42, color: Color(0xFF0F766E)),
+          const Icon(Icons.style_outlined, size: 42, color: Color(0xFF173F35)),
           const SizedBox(height: 12), const Text('لا توجد بطاقات عامة منشورة حاليًا.', textAlign: TextAlign.center),
           const SizedBox(height: 12), FilledButton(onPressed: () => context.go('/profile'), child: const Text('إنشاء بطاقات شخصية')),
         ]),

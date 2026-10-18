@@ -61,7 +61,7 @@ class _SchoolsPageState extends State<SchoolsPage> {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                if (area.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(area, style: const TextStyle(color: Color(0xFF64748B)))),
+                if (area.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(area, style: const TextStyle(color: Color(0xFF58655F)))),
               ])),
             ]),
             if (details.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 9), child: Text(details)),

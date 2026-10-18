@@ -299,7 +299,7 @@ class _StudyContentManagerState extends State<StudyContentManager> {
               final active = data['active'] != false;
               return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(widget.collectionName == 'foundations' ? Icons.menu_book_rounded : Icons.check_circle_outline_rounded, color: active ? const Color(0xFF0F766E) : const Color(0xFF94A3B8)),
+                leading: Icon(widget.collectionName == 'foundations' ? Icons.menu_book_rounded : Icons.check_circle_outline_rounded, color: active ? const Color(0xFF173F35) : const Color(0xFF87958D)),
                 title: Text((data['title'] ?? 'محتوى').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text(active ? (data['subjectId'] ?? '').toString() : 'مخفي عن الطلاب'),
                 onTap: () => _edit(item: item),
@@ -527,7 +527,7 @@ class _SourceRegistryManagerState extends State<SourceRegistryManager> {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
                   conflict ? Icons.warning_amber_rounded : pending ? Icons.rate_review_outlined : Icons.inventory_2_outlined,
-                  color: conflict ? const Color(0xFFB45309) : pending ? const Color(0xFF0F766E) : const Color(0xFF64748B),
+                  color: conflict ? const Color(0xFFB45309) : pending ? const Color(0xFF173F35) : const Color(0xFF58655F),
                 ),
                 title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
                 subtitle: Text(subtitle.isEmpty ? url : subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
