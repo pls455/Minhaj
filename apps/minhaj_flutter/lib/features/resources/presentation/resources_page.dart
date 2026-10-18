@@ -8,26 +8,26 @@ import '../../../core/widgets/async_state.dart';
 
 String _branchAsset(String name) {
   final value = name.toLowerCase();
-  if (value.contains('علمي') || value.contains('scientific')) return 'assets/branch_scientific.png';
-  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/branch_literary.png';
-  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/branch_industrial.png';
-  return 'assets/minhaj-logo.png';
+  if (value.contains('علمي') || value.contains('scientific')) return 'assets/optimized/branch_scientific.webp';
+  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/optimized/branch_literary.webp';
+  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/optimized/branch_industrial.webp';
+  return 'assets/optimized/minhaj-logo.webp';
 }
 
 String _subjectAsset(String name) {
   final value = name.toLowerCase();
-  if (value.contains('عربي') || value.contains('arabic')) return 'assets/subject_arabic.png';
-  if (value.contains('رياض') || value.contains('math')) return 'assets/subject_math.png';
-  if (value.contains('فيزياء') || value.contains('physics')) return 'assets/subject_physics.png';
-  if (value.contains('كيمياء') || value.contains('chemistry')) return 'assets/subject_chemistry.png';
-  if (value.contains('أحياء') || value.contains('احياء') || value.contains('biology')) return 'assets/subject_biology.png';
-  if (value.contains('إنجليزي') || value.contains('انجليزي') || value.contains('english')) return 'assets/subject_english.png';
-  if (value.contains('جغرافيا') || value.contains('geography')) return 'assets/subject_geography.png';
-  if (value.contains('تاريخ') || value.contains('history')) return 'assets/subject_history.png';
-  if (value.contains('إسلام') || value.contains('اسلام') || value.contains('islamic')) return 'assets/subject_islamic_education.png';
-  if (value.contains('تكنولوجيا') || value.contains('technology')) return 'assets/subject_technology.png';
-  if (value.contains('مهني') || value.contains('vocational')) return 'assets/subject_vocational.png';
-  return 'assets/minhaj-logo.png';
+  if (value.contains('عربي') || value.contains('arabic')) return 'assets/optimized/subject_arabic.webp';
+  if (value.contains('رياض') || value.contains('math')) return 'assets/optimized/subject_math.webp';
+  if (value.contains('فيزياء') || value.contains('physics')) return 'assets/optimized/subject_physics.webp';
+  if (value.contains('كيمياء') || value.contains('chemistry')) return 'assets/optimized/subject_chemistry.webp';
+  if (value.contains('أحياء') || value.contains('احياء') || value.contains('biology')) return 'assets/optimized/subject_biology.webp';
+  if (value.contains('إنجليزي') || value.contains('انجليزي') || value.contains('english')) return 'assets/optimized/subject_english.webp';
+  if (value.contains('جغرافيا') || value.contains('geography')) return 'assets/optimized/subject_geography.webp';
+  if (value.contains('تاريخ') || value.contains('history')) return 'assets/optimized/subject_history.webp';
+  if (value.contains('إسلام') || value.contains('اسلام') || value.contains('islamic')) return 'assets/optimized/subject_islamic_education.webp';
+  if (value.contains('تكنولوجيا') || value.contains('technology')) return 'assets/optimized/subject_technology.webp';
+  if (value.contains('مهني') || value.contains('vocational')) return 'assets/optimized/subject_vocational.webp';
+  return 'assets/optimized/minhaj-logo.webp';
 }
 
 class ResourcesPage extends StatefulWidget {
