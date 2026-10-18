@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             gradient: const LinearGradient(
               begin: Alignment.topRight, end: Alignment.bottomLeft,
-              colors: [Color(0xFF173F35), Color(0xFF173F35)],
+              colors: [Color(0xFF173F35), Color(0xFF26332F)],
             ),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
