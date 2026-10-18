@@ -35,7 +35,7 @@ Firebase client configuration is expected to be present in a client app. It does
 
 The app uses the MINHAJ brand palette: forest green `#173F35`, warm ivory `#F6F3EA`, sand gold `#C5A46D`, and charcoal green `#26332F`. The Android launcher icon and web app metadata use the same identity.
 
-The Android release build is **not store-ready until it is signed with your own release keystore**. Never commit the keystore or passwords. Configure signing privately in the build environment before producing a distributable APK/AAB. The CI APK is a debug preview, not a store release.
+The Android release build is **not store-ready until it is signed with your own release keystore**. The Gradle release variant no longer uses the debug key. Supply `MINHAJ_RELEASE_STORE_FILE`, `MINHAJ_RELEASE_STORE_PASSWORD`, `MINHAJ_RELEASE_KEY_ALIAS`, and `MINHAJ_RELEASE_KEY_PASSWORD` as private build-environment variables. Never commit the keystore or passwords. The CI APK is a debug preview, not a store release.
 
 ## Current features
 
