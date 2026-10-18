@@ -1,3 +1,14 @@
+body[data-page="admin"] {
+  --color-primary:#173F35;
+  --color-primary-hover:#12342C;
+  --color-secondary:#C5A46D;
+  --color-background:#F6F3EA;
+  --color-surface:rgba(255,255,255,.94);
+  --color-surface-solid:#FFFFFF;
+  --color-text:#26332F;
+  --color-muted:#58655F;
+  --color-border:rgba(38,51,47,.13);
+}
 /* Minhaj 2.0 Admin UI */
 .admin-shell{
   --color-primary:#173F35;
