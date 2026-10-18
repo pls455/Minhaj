@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Generated from source images by tools/optimize_app_assets.py
+/assets/optimized/
