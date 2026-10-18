@@ -5,10 +5,10 @@ import '../../../core/widgets/async_state.dart';
 
 String _branchAsset(String name) {
   final value = name.toLowerCase();
-  if (value.contains('علمي') || value.contains('scientific')) return 'assets/branch_scientific.png';
-  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/branch_literary.png';
-  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/branch_industrial.png';
-  return 'assets/minhaj-logo.png';
+  if (value.contains('علمي') || value.contains('scientific')) return 'assets/optimized/branch_scientific.webp';
+  if (value.contains('أدبي') || value.contains('ادبي') || value.contains('literary')) return 'assets/optimized/branch_literary.webp';
+  if (value.contains('صناعي') || value.contains('industrial')) return 'assets/optimized/branch_industrial.webp';
+  return 'assets/optimized/minhaj-logo.webp';
 }
 
 class BranchesPage extends StatefulWidget {
