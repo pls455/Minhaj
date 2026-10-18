@@ -21,10 +21,10 @@ flutter run -d chrome \
 
 ## Android configuration
 
-Android client configuration for Firebase project `minhaj-1be6f` and application ID `com.karam.minhaj` is included as default values in `lib/core/config/firebase_config.dart`. You can build an APK without entering Firebase values again:
+Android client configuration for Firebase project `minhaj-1be6f` and application ID `com.karam.minhaj` is included as default values in `lib/core/config/firebase_config.dart`. A local debug preview can be built without entering Firebase values again:
 
 ```sh
-flutter build apk --release
+flutter build apk --debug
 ```
 
 To override the defaults for a different build, pass `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_MESSAGING_SENDER_ID`, and `FIREBASE_PROJECT_ID` with `--dart-define`.
@@ -36,6 +36,24 @@ Firebase client configuration is expected to be present in a client app. It does
 The app uses the MINHAJ brand palette: forest green `#173F35`, warm ivory `#F6F3EA`, sand gold `#C5A46D`, and charcoal green `#26332F`. The Android launcher icon and web app metadata use the same identity.
 
 The Android release build is **not store-ready until it is signed with your own release keystore**. The Gradle release variant no longer uses the debug key. Supply `MINHAJ_RELEASE_STORE_FILE`, `MINHAJ_RELEASE_STORE_PASSWORD`, `MINHAJ_RELEASE_KEY_ALIAS`, and `MINHAJ_RELEASE_KEY_PASSWORD` as private build-environment variables. Never commit the keystore or passwords. The CI APK is a debug preview, not a store release.
+
+## Image assets and local builds
+
+The original PNG illustrations remain in Git as source artwork. To keep the app bundle smaller, only generated WebP versions are packaged by Flutter.
+
+Before a local build, run these commands from the repository root:
+
+```sh
+python -m pip install Pillow
+python tools/optimize_app_assets.py
+cd apps/minhaj_flutter
+flutter pub get
+flutter test
+flutter build web --release
+flutter build apk --debug
+```
+
+The CI workflow generates these images automatically before resolving Flutter assets. The generated `apps/minhaj_flutter/assets/optimized/` directory is intentionally ignored by Git and should not be committed.
 
 ## Current features
 
